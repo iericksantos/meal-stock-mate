@@ -1,0 +1,429 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { Search, Save, RotateCcw, Package, AlertTriangle, Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { differenceInDays, parseISO, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Item {
+  id: string;
+  category_id: string;
+  name: string;
+  unit: string;
+  min_stock: number;
+  current_stock: number;
+  expiry_date: string | null;
+  last_count_date: string | null;
+}
+
+interface EditedItem {
+  id: string;
+  current_stock: number;
+  expiry_date: string | null;
+  original_stock: number;
+  original_expiry: string | null;
+}
+
+export default function StockEntry() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editedItems, setEditedItems] = useState<Map<string, EditedItem>>(new Map());
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [categoriesRes, itemsRes] = await Promise.all([
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('items').select('*').order('name'),
+      ]);
+
+      if (categoriesRes.error) throw categoriesRes.error;
+      if (itemsRes.error) throw itemsRes.error;
+
+      setCategories(categoriesRes.data || []);
+      setItems(itemsRes.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: 'Erro ao carregar dados',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredItems = items.filter((item) => {
+    const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const handleStockChange = (itemId: string, value: string) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    const newStock = parseFloat(value) || 0;
+    const newEdited = new Map(editedItems);
+
+    if (!newEdited.has(itemId)) {
+      newEdited.set(itemId, {
+        id: itemId,
+        current_stock: newStock,
+        expiry_date: item.expiry_date,
+        original_stock: item.current_stock,
+        original_expiry: item.expiry_date,
+      });
+    } else {
+      const existing = newEdited.get(itemId)!;
+      newEdited.set(itemId, { ...existing, current_stock: newStock });
+    }
+
+    setEditedItems(newEdited);
+  };
+
+  const handleExpiryChange = (itemId: string, date: Date | undefined) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    const newExpiry = date ? format(date, 'yyyy-MM-dd') : null;
+    const newEdited = new Map(editedItems);
+
+    if (!newEdited.has(itemId)) {
+      newEdited.set(itemId, {
+        id: itemId,
+        current_stock: item.current_stock,
+        expiry_date: newExpiry,
+        original_stock: item.current_stock,
+        original_expiry: item.expiry_date,
+      });
+    } else {
+      const existing = newEdited.get(itemId)!;
+      newEdited.set(itemId, { ...existing, expiry_date: newExpiry });
+    }
+
+    setEditedItems(newEdited);
+  };
+
+  const getDisplayStock = (item: Item) => {
+    const edited = editedItems.get(item.id);
+    return edited !== undefined ? edited.current_stock : item.current_stock;
+  };
+
+  const getDisplayExpiry = (item: Item) => {
+    const edited = editedItems.get(item.id);
+    return edited !== undefined ? edited.expiry_date : item.expiry_date;
+  };
+
+  const handleSave = async () => {
+    if (editedItems.size === 0) {
+      toast({ title: 'Nenhuma alteração para salvar' });
+      return;
+    }
+
+    setSaving(true);
+    const today = format(new Date(), 'yyyy-MM-dd');
+    let updatedCount = 0;
+    let lowStockCount = 0;
+    let expiringSoonCount = 0;
+
+    try {
+      for (const [itemId, edited] of editedItems) {
+        const item = items.find((i) => i.id === itemId);
+        if (!item) continue;
+
+        // Update item
+        const { error } = await supabase
+          .from('items')
+          .update({
+            current_stock: edited.current_stock,
+            expiry_date: edited.expiry_date,
+            last_count_date: today,
+            last_counted_by: user?.id,
+          })
+          .eq('id', itemId);
+
+        if (error) throw error;
+
+        // Insert history
+        await supabase.from('stock_history').insert({
+          item_id: itemId,
+          previous_stock: edited.original_stock,
+          new_stock: edited.current_stock,
+          previous_expiry: edited.original_expiry,
+          new_expiry: edited.expiry_date,
+          changed_by: user?.id,
+        });
+
+        updatedCount++;
+
+        // Check alerts
+        if (edited.current_stock < item.min_stock) {
+          lowStockCount++;
+        }
+        if (edited.expiry_date) {
+          const daysUntil = differenceInDays(parseISO(edited.expiry_date), new Date());
+          if (daysUntil <= 1 && daysUntil >= 0) {
+            expiringSoonCount++;
+          }
+        }
+      }
+
+      toast({
+        title: 'Alterações salvas!',
+        description: `${updatedCount} ${updatedCount === 1 ? 'item atualizado' : 'itens atualizados'}. ${lowStockCount > 0 ? `${lowStockCount} abaixo do mínimo. ` : ''}${expiringSoonCount > 0 ? `${expiringSoonCount} próximo do vencimento.` : ''}`,
+      });
+
+      setEditedItems(new Map());
+      fetchData();
+    } catch (error) {
+      console.error('Error saving:', error);
+      toast({
+        title: 'Erro ao salvar alterações',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    if (editedItems.size === 0) return;
+    if (!confirm('Descartar todas as alterações?')) return;
+    setEditedItems(new Map());
+  };
+
+  const getRowClassName = (item: Item) => {
+    const expiry = getDisplayExpiry(item);
+    if (expiry) {
+      const daysUntilExpiry = differenceInDays(parseISO(expiry), new Date());
+      if (daysUntilExpiry <= 1 && daysUntilExpiry >= 0) {
+        return 'stock-danger';
+      }
+    }
+    return '';
+  };
+
+  const getStockCellClassName = (item: Item) => {
+    const stock = getDisplayStock(item);
+    if (stock < item.min_stock) {
+      return 'stock-warning';
+    }
+    return '';
+  };
+
+  const getCategoryName = (categoryId: string) => {
+    return categories.find((c) => c.id === categoryId)?.name || '';
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold md:text-3xl">Preenchimento de Estoque</h1>
+            <p className="mt-1 text-muted-foreground">
+              Atualize rapidamente as quantidades e validades
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleDiscard}
+              disabled={editedItems.size === 0 || saving}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Descartar
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={editedItems.size === 0 || saving}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Salvar Alterações
+              {editedItems.size > 0 && (
+                <span className="ml-2 rounded-full bg-primary-foreground/20 px-2 py-0.5 text-xs">
+                  {editedItems.size}
+                </span>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="flex-1">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as categorias" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar produto..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 rounded bg-danger-light border border-danger" />
+            <span className="text-muted-foreground">Próximo ao vencimento</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 rounded bg-warning-light border border-warning" />
+            <span className="text-muted-foreground">Estoque abaixo do mínimo</span>
+          </div>
+        </div>
+
+        {/* Table */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Package className="h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mt-4 text-lg font-medium">Nenhum item encontrado</h3>
+              <p className="mt-2 text-center text-muted-foreground">
+                {items.length === 0
+                  ? 'Cadastre itens na tela de Gestão de Estoque primeiro.'
+                  : 'Tente ajustar os filtros de busca.'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-table-header">
+                    <TableHead className="font-semibold">Produto</TableHead>
+                    <TableHead className="font-semibold">Categoria</TableHead>
+                    <TableHead className="font-semibold">Unidade</TableHead>
+                    <TableHead className="font-semibold">Est. Mínimo</TableHead>
+                    <TableHead className="font-semibold">Qtd Atual</TableHead>
+                    <TableHead className="font-semibold">Validade</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.map((item, index) => (
+                    <TableRow
+                      key={item.id}
+                      className={cn(
+                        getRowClassName(item),
+                        index % 2 === 1 && !getRowClassName(item) && 'bg-table-row-alt'
+                      )}
+                    >
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {getCategoryName(item.category_id)}
+                      </TableCell>
+                      <TableCell>{item.unit}</TableCell>
+                      <TableCell>{item.min_stock}</TableCell>
+                      <TableCell className={cn('p-2', getStockCellClassName(item))}>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={getDisplayStock(item)}
+                          onChange={(e) => handleStockChange(item.id, e.target.value)}
+                          className="h-9 w-24 bg-background"
+                        />
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                'w-[140px] justify-start text-left font-normal',
+                                !getDisplayExpiry(item) && 'text-muted-foreground'
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {getDisplayExpiry(item)
+                                ? format(parseISO(getDisplayExpiry(item)!), 'dd/MM/yyyy')
+                                : 'Selecionar'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={getDisplayExpiry(item) ? parseISO(getDisplayExpiry(item)!) : undefined}
+                              onSelect={(date) => handleExpiryChange(item.id, date)}
+                              initialFocus
+                              className="p-3 pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
