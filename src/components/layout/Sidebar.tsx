@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import {
   Package,
@@ -9,39 +10,49 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const navItems = [
   {
-    title: 'Dashboard',
+    titleKey: 'nav.dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
     roles: ['admin', 'staff'],
   },
   {
-    title: 'Gestão de Estoque',
+    titleKey: 'nav.inventory',
     href: '/inventory',
     icon: Package,
     roles: ['admin'],
   },
   {
-    title: 'Preenchimento',
+    titleKey: 'nav.stock_entry',
     href: '/stock-entry',
     icon: ClipboardList,
     roles: ['admin', 'staff'],
   },
   {
-    title: 'Usuários',
+    titleKey: 'nav.users',
     href: '/users',
     icon: Users,
     roles: ['admin'],
   },
+  {
+    titleKey: 'nav.settings',
+    href: '/settings',
+    icon: Settings,
+    roles: ['admin', 'staff'],
+  },
 ];
 
 export default function Sidebar() {
-  const { user, role, signOut, isAdmin } = useAuth();
+  const { user, role, signOut } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -119,11 +130,21 @@ export default function Sidebar() {
                 onClick={() => setCollapsed(true)}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.title}</span>}
+                {!collapsed && <span>{t(item.titleKey)}</span>}
               </Link>
             );
           })}
         </nav>
+
+        {/* Quick Settings (collapsed view) */}
+        {!collapsed && (
+          <div className="border-t border-sidebar-border p-4">
+            <div className="flex items-center justify-center gap-2">
+              <LanguageSelector variant="compact" />
+              <ThemeToggle variant="compact" />
+            </div>
+          </div>
+        )}
 
         {/* User info */}
         <div className="border-t border-sidebar-border p-4">
@@ -135,7 +156,7 @@ export default function Sidebar() {
               <div className="flex-1 min-w-0">
                 <p className="truncate text-sm font-medium">{user?.email}</p>
                 <p className="text-xs text-sidebar-foreground/60 capitalize">
-                  {role || 'Carregando...'}
+                  {role || t('common.loading')}
                 </p>
               </div>
             )}
@@ -149,7 +170,7 @@ export default function Sidebar() {
             onClick={signOut}
           >
             <LogOut className="h-4 w-4" />
-            {!collapsed && <span className="ml-2">Sair</span>}
+            {!collapsed && <span className="ml-2">{t('nav.logout')}</span>}
           </Button>
         </div>
       </aside>

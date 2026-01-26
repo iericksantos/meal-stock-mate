@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Users as UsersIcon, Trash2, Shield, User } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, es, enUS } from 'date-fns/locale';
 
 interface UserWithRole {
   id: string;
@@ -44,6 +45,7 @@ interface UserWithRole {
 
 export default function Users() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,27 +59,32 @@ export default function Users() {
     role: 'staff' as 'admin' | 'staff',
   });
 
+  const getDateLocale = () => {
+    switch (language) {
+      case 'es': return es;
+      case 'en': return enUS;
+      default: return ptBR;
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
     try {
-      // Get all user_roles
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      // Get profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
 
       if (profilesError) throw profilesError;
 
-      // Combine data
       const usersData: UserWithRole[] = (roles || []).map((role) => {
         const profile = profiles?.find((p) => p.user_id === role.user_id);
         return {
@@ -93,7 +100,7 @@ export default function Users() {
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
-        title: 'Erro ao carregar usuários',
+        title: t('users.load_error'),
         variant: 'destructive',
       });
     } finally {
@@ -104,7 +111,7 @@ export default function Users() {
   const handleCreateUser = async () => {
     if (!newUser.email || !newUser.password || !newUser.full_name) {
       toast({
-        title: 'Preencha todos os campos',
+        title: t('users.fill_all_fields'),
         variant: 'destructive',
       });
       return;
@@ -112,7 +119,7 @@ export default function Users() {
 
     if (newUser.password.length < 6) {
       toast({
-        title: 'A senha deve ter pelo menos 6 caracteres',
+        title: t('users.password_min'),
         variant: 'destructive',
       });
       return;
@@ -121,7 +128,6 @@ export default function Users() {
     setCreating(true);
 
     try {
-      // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
@@ -133,7 +139,6 @@ export default function Users() {
       if (authError) throw authError;
       if (!authData.user) throw new Error('User not created');
 
-      // Create profile
       const { error: profileError } = await supabase.from('profiles').insert({
         user_id: authData.user.id,
         full_name: newUser.full_name,
@@ -141,7 +146,6 @@ export default function Users() {
 
       if (profileError) throw profileError;
 
-      // Create role
       const { error: roleError } = await supabase.from('user_roles').insert({
         user_id: authData.user.id,
         role: newUser.role,
@@ -149,21 +153,22 @@ export default function Users() {
 
       if (roleError) throw roleError;
 
-      toast({ title: 'Usuário criado com sucesso!' });
+      toast({ title: t('users.created_success') });
       setNewUser({ email: '', password: '', full_name: '', role: 'staff' });
       setModalOpen(false);
       fetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating user:', error);
-      if (error.message?.includes('already registered')) {
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('already registered')) {
         toast({
-          title: 'Este email já está cadastrado',
+          title: t('users.email_exists'),
           variant: 'destructive',
         });
       } else {
         toast({
-          title: 'Erro ao criar usuário',
-          description: error.message,
+          title: t('users.create_error'),
+          description: message,
           variant: 'destructive',
         });
       }
@@ -175,16 +180,15 @@ export default function Users() {
   const handleDeleteUser = async (userId: string) => {
     if (userId === user?.id) {
       toast({
-        title: 'Você não pode excluir seu próprio usuário',
+        title: t('users.delete_self_error'),
         variant: 'destructive',
       });
       return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+    if (!confirm(t('users.confirm_delete'))) return;
 
     try {
-      // Delete role
       const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
@@ -192,7 +196,6 @@ export default function Users() {
 
       if (roleError) throw roleError;
 
-      // Delete profile
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -200,12 +203,12 @@ export default function Users() {
 
       if (profileError) throw profileError;
 
-      toast({ title: 'Usuário removido!' });
+      toast({ title: t('users.deleted') });
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({
-        title: 'Erro ao excluir usuário',
+        title: t('users.delete_error'),
         variant: 'destructive',
       });
     }
@@ -217,25 +220,25 @@ export default function Users() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold md:text-3xl">Usuários</h1>
+            <h1 className="text-2xl font-bold md:text-3xl">{t('users.title')}</h1>
             <p className="mt-1 text-muted-foreground">
-              Gerencie os usuários da sua operação
+              {t('users.subtitle')}
             </p>
           </div>
           <Dialog open={modalOpen} onOpenChange={setModalOpen}>
             <DialogTrigger asChild>
               <Button>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Novo Usuário
+                {t('users.new_user')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Adicionar Novo Usuário</DialogTitle>
+                <DialogTitle>{t('users.add_user')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Nome completo</Label>
+                  <Label htmlFor="fullName">{t('users.full_name')}</Label>
                   <Input
                     id="fullName"
                     placeholder="João da Silva"
@@ -246,7 +249,7 @@ export default function Users() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('auth.email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -258,7 +261,7 @@ export default function Users() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
+                  <Label htmlFor="password">{t('auth.password')}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -270,7 +273,7 @@ export default function Users() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Tipo de usuário</Label>
+                  <Label>{t('users.user_type')}</Label>
                   <Select
                     value={newUser.role}
                     onValueChange={(value: 'admin' | 'staff') =>
@@ -284,13 +287,13 @@ export default function Users() {
                       <SelectItem value="staff">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
-                          Staff - Pode preencher estoque
+                          {t('users.staff_desc')}
                         </div>
                       </SelectItem>
                       <SelectItem value="admin">
                         <div className="flex items-center gap-2">
                           <Shield className="h-4 w-4" />
-                          Admin - Acesso completo
+                          {t('users.admin_desc')}
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -301,7 +304,7 @@ export default function Users() {
                   onClick={handleCreateUser}
                   disabled={creating}
                 >
-                  {creating ? 'Criando...' : 'Criar Usuário'}
+                  {creating ? t('users.creating') : t('users.create_user')}
                 </Button>
               </div>
             </DialogContent>
@@ -317,9 +320,9 @@ export default function Users() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <UsersIcon className="h-12 w-12 text-muted-foreground/50" />
-              <h3 className="mt-4 text-lg font-medium">Nenhum usuário</h3>
+              <h3 className="mt-4 text-lg font-medium">{t('users.no_users')}</h3>
               <p className="mt-2 text-center text-muted-foreground">
-                Adicione usuários para gerenciar o estoque.
+                {t('users.add_users_desc')}
               </p>
             </CardContent>
           </Card>
@@ -335,9 +338,9 @@ export default function Users() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-table-header">
-                      <TableHead className="font-semibold">Nome</TableHead>
-                      <TableHead className="font-semibold">Tipo</TableHead>
-                      <TableHead className="font-semibold">Cadastrado em</TableHead>
+                      <TableHead className="font-semibold">{t('table.name')}</TableHead>
+                      <TableHead className="font-semibold">{t('table.type')}</TableHead>
+                      <TableHead className="font-semibold">{t('users.registered_at')}</TableHead>
                       <TableHead className="w-[80px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -355,7 +358,7 @@ export default function Users() {
                             <div>
                               <p className="font-medium">{u.full_name}</p>
                               {u.id === user?.id && (
-                                <span className="text-xs text-muted-foreground">(você)</span>
+                                <span className="text-xs text-muted-foreground">{t('users.you')}</span>
                               )}
                             </div>
                           </div>
@@ -369,12 +372,12 @@ export default function Users() {
                             ) : (
                               <User className="mr-1 h-3 w-3" />
                             )}
-                            {u.role === 'admin' ? 'Admin' : 'Staff'}
+                            {t(`common.${u.role}`)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {format(parseISO(u.created_at), "dd 'de' MMMM 'de' yyyy", {
-                            locale: ptBR,
+                            locale: getDateLocale(),
                           })}
                         </TableCell>
                         <TableCell>

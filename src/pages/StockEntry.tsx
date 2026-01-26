@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,10 +22,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Save, RotateCcw, Package, AlertTriangle, Clock } from 'lucide-react';
+import { Search, Save, RotateCcw, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { differenceInDays, parseISO, format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
@@ -55,6 +55,7 @@ interface EditedItem {
 
 export default function StockEntry() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -83,7 +84,7 @@ export default function StockEntry() {
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
-        title: 'Erro ao carregar dados',
+        title: t('common.error'),
         variant: 'destructive',
       });
     } finally {
@@ -155,7 +156,7 @@ export default function StockEntry() {
 
   const handleSave = async () => {
     if (editedItems.size === 0) {
-      toast({ title: 'Nenhuma alteração para salvar' });
+      toast({ title: t('stock_entry.no_changes') });
       return;
     }
 
@@ -170,7 +171,6 @@ export default function StockEntry() {
         const item = items.find((i) => i.id === itemId);
         if (!item) continue;
 
-        // Update item
         const { error } = await supabase
           .from('items')
           .update({
@@ -183,7 +183,6 @@ export default function StockEntry() {
 
         if (error) throw error;
 
-        // Insert history
         await supabase.from('stock_history').insert({
           item_id: itemId,
           previous_stock: edited.original_stock,
@@ -195,7 +194,6 @@ export default function StockEntry() {
 
         updatedCount++;
 
-        // Check alerts
         if (edited.current_stock < item.min_stock) {
           lowStockCount++;
         }
@@ -208,8 +206,8 @@ export default function StockEntry() {
       }
 
       toast({
-        title: 'Alterações salvas!',
-        description: `${updatedCount} ${updatedCount === 1 ? 'item atualizado' : 'itens atualizados'}. ${lowStockCount > 0 ? `${lowStockCount} abaixo do mínimo. ` : ''}${expiringSoonCount > 0 ? `${expiringSoonCount} próximo do vencimento.` : ''}`,
+        title: t('stock_entry.saved'),
+        description: `${updatedCount} ${updatedCount === 1 ? t('stock_entry.item_updated') : t('stock_entry.items_updated')}. ${lowStockCount > 0 ? `${lowStockCount} ${t('stock_entry.below_min')}. ` : ''}${expiringSoonCount > 0 ? `${expiringSoonCount} ${t('stock_entry.near_expiry')}.` : ''}`,
       });
 
       setEditedItems(new Map());
@@ -217,7 +215,7 @@ export default function StockEntry() {
     } catch (error) {
       console.error('Error saving:', error);
       toast({
-        title: 'Erro ao salvar alterações',
+        title: t('common.error'),
         variant: 'destructive',
       });
     } finally {
@@ -227,7 +225,7 @@ export default function StockEntry() {
 
   const handleDiscard = () => {
     if (editedItems.size === 0) return;
-    if (!confirm('Descartar todas as alterações?')) return;
+    if (!confirm(t('stock_entry.discard_confirm'))) return;
     setEditedItems(new Map());
   };
 
@@ -260,9 +258,9 @@ export default function StockEntry() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold md:text-3xl">Preenchimento de Estoque</h1>
+            <h1 className="text-2xl font-bold md:text-3xl">{t('stock_entry.title')}</h1>
             <p className="mt-1 text-muted-foreground">
-              Atualize rapidamente as quantidades e validades
+              {t('stock_entry.subtitle')}
             </p>
           </div>
           <div className="flex gap-2">
@@ -272,14 +270,14 @@ export default function StockEntry() {
               disabled={editedItems.size === 0 || saving}
             >
               <RotateCcw className="mr-2 h-4 w-4" />
-              Descartar
+              {t('stock_entry.discard')}
             </Button>
             <Button
               onClick={handleSave}
               disabled={editedItems.size === 0 || saving}
             >
               <Save className="mr-2 h-4 w-4" />
-              Salvar Alterações
+              {t('stock_entry.save_changes')}
               {editedItems.size > 0 && (
                 <span className="ml-2 rounded-full bg-primary-foreground/20 px-2 py-0.5 text-xs">
                   {editedItems.size}
@@ -296,10 +294,10 @@ export default function StockEntry() {
               <div className="flex-1">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Todas as categorias" />
+                    <SelectValue placeholder={t('stock_entry.all_categories')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    <SelectItem value="all">{t('stock_entry.all_categories')}</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
@@ -311,7 +309,7 @@ export default function StockEntry() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar produto..."
+                  placeholder={t('stock_entry.search_product')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -325,11 +323,11 @@ export default function StockEntry() {
         <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 rounded bg-danger-light border border-danger" />
-            <span className="text-muted-foreground">Próximo ao vencimento</span>
+            <span className="text-muted-foreground">{t('stock_entry.expiring_legend')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 rounded bg-warning-light border border-warning" />
-            <span className="text-muted-foreground">Estoque abaixo do mínimo</span>
+            <span className="text-muted-foreground">{t('stock_entry.low_stock_legend')}</span>
           </div>
         </div>
 
@@ -342,11 +340,11 @@ export default function StockEntry() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Package className="h-12 w-12 text-muted-foreground/50" />
-              <h3 className="mt-4 text-lg font-medium">Nenhum item encontrado</h3>
+              <h3 className="mt-4 text-lg font-medium">{t('stock_entry.no_items')}</h3>
               <p className="mt-2 text-center text-muted-foreground">
                 {items.length === 0
-                  ? 'Cadastre itens na tela de Gestão de Estoque primeiro.'
-                  : 'Tente ajustar os filtros de busca.'}
+                  ? t('stock_entry.register_first')
+                  : t('stock_entry.adjust_filters')}
               </p>
             </CardContent>
           </Card>
@@ -356,12 +354,12 @@ export default function StockEntry() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-table-header">
-                    <TableHead className="font-semibold">Produto</TableHead>
-                    <TableHead className="font-semibold">Categoria</TableHead>
-                    <TableHead className="font-semibold">Unidade</TableHead>
-                    <TableHead className="font-semibold">Est. Mínimo</TableHead>
-                    <TableHead className="font-semibold">Qtd Atual</TableHead>
-                    <TableHead className="font-semibold">Validade</TableHead>
+                    <TableHead className="font-semibold">{t('table.product')}</TableHead>
+                    <TableHead className="font-semibold">{t('table.category')}</TableHead>
+                    <TableHead className="font-semibold">{t('table.unit')}</TableHead>
+                    <TableHead className="font-semibold">{t('table.min_stock')}</TableHead>
+                    <TableHead className="font-semibold">{t('table.current_qty')}</TableHead>
+                    <TableHead className="font-semibold">{t('table.expiry')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -402,7 +400,7 @@ export default function StockEntry() {
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {getDisplayExpiry(item)
                                 ? format(parseISO(getDisplayExpiry(item)!), 'dd/MM/yyyy')
-                                : 'Selecionar'}
+                                : t('stock_entry.select_date')}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
