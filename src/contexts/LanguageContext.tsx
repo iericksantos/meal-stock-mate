@@ -97,8 +97,11 @@ const translations: Record<Language, Record<string, string>> = {
     'stock_entry.filter_low_stock': 'Filtrando: Estoque Baixo',
     'stock_entry.filter_expiring': 'Filtrando: Próximo ao Vencimento',
     'stock_entry.clear_filter': 'Limpar filtro',
+    'stock_entry.staff_restriction_notice': 'Como funcionário, você só pode aumentar o estoque. Para reduzir, use o botão "Baixa de Estoque".',
+    'stock_entry.staff_no_decrease': 'Funcionários não podem diminuir o estoque diretamente. Use a função "Baixa de Estoque".',
+    'stock_entry.entry_reason': 'Entrada de estoque',
+    'stock_entry.adjustment_reason': 'Ajuste manual',
 
-    // Users
     'users.title': 'Usuários',
     'users.subtitle': 'Gerencie os usuários da sua operação',
     'users.new_user': 'Novo Usuário',
@@ -294,8 +297,11 @@ const translations: Record<Language, Record<string, string>> = {
     'stock_entry.filter_low_stock': 'Filtrando: Stock Bajo',
     'stock_entry.filter_expiring': 'Filtrando: Próximo a Vencer',
     'stock_entry.clear_filter': 'Limpiar filtro',
+    'stock_entry.staff_restriction_notice': 'Como empleado, solo puede aumentar el stock. Para reducir, use el botón "Salida de Stock".',
+    'stock_entry.staff_no_decrease': 'Los empleados no pueden disminuir el stock directamente. Use la función "Salida de Stock".',
+    'stock_entry.entry_reason': 'Entrada de inventario',
+    'stock_entry.adjustment_reason': 'Ajuste manual',
 
-    // Users
     'users.title': 'Usuarios',
     'users.subtitle': 'Gestione los usuarios de su operación',
     'users.new_user': 'Nuevo Usuario',
@@ -491,8 +497,11 @@ const translations: Record<Language, Record<string, string>> = {
     'stock_entry.filter_low_stock': 'Filtering: Low Stock',
     'stock_entry.filter_expiring': 'Filtering: Expiring Soon',
     'stock_entry.clear_filter': 'Clear filter',
+    'stock_entry.staff_restriction_notice': 'As a staff member, you can only increase stock. To reduce, use the "Stock Withdrawal" button.',
+    'stock_entry.staff_no_decrease': 'Staff members cannot decrease stock directly. Use the "Stock Withdrawal" function.',
+    'stock_entry.entry_reason': 'Stock entry',
+    'stock_entry.adjustment_reason': 'Manual adjustment',
 
-    // Users
     'users.title': 'Users',
     'users.subtitle': 'Manage your operation users',
     'users.new_user': 'New User',
