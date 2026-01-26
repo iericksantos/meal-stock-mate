@@ -1,0 +1,487 @@
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+export type Language = 'pt-BR' | 'es' | 'en';
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+}
+
+const translations: Record<Language, Record<string, string>> = {
+  'pt-BR': {
+    // Auth
+    'auth.title': 'Controle de Estoque',
+    'auth.subtitle': 'Entre com suas credenciais para acessar o sistema',
+    'auth.email': 'Email',
+    'auth.password': 'Senha',
+    'auth.login': 'Entrar',
+    'auth.logging_in': 'Entrando...',
+    'auth.fill_all_fields': 'Por favor, preencha todos os campos.',
+    'auth.invalid_credentials': 'Email ou senha incorretos.',
+    'auth.error': 'Erro ao fazer login. Tente novamente.',
+    'auth.success': 'Login realizado com sucesso!',
+    'auth.welcome': 'Bem-vindo ao sistema de estoque.',
+    'auth.test_users': 'Usuários de teste:',
+
+    // Sidebar
+    'nav.dashboard': 'Dashboard',
+    'nav.inventory': 'Gestão de Estoque',
+    'nav.stock_entry': 'Preenchimento',
+    'nav.users': 'Usuários',
+    'nav.settings': 'Configurações',
+    'nav.logout': 'Sair',
+
+    // Dashboard
+    'dashboard.title': 'Dashboard',
+    'dashboard.subtitle': 'Bem-vindo ao sistema de controle de estoque',
+    'dashboard.total_items': 'Total de Itens',
+    'dashboard.low_stock': 'Estoque Baixo',
+    'dashboard.expiring_soon': 'Próximo ao Vencimento',
+    'dashboard.up_to_date': 'Em Dia',
+    'dashboard.quick_info': 'Informações Rápidas',
+    'dashboard.your_profile': 'Seu perfil',
+    'dashboard.color_legend': 'Legenda de cores',
+    'dashboard.expiring_legend': 'Item próximo ao vencimento (1 dia ou menos)',
+    'dashboard.low_stock_legend': 'Estoque abaixo do mínimo',
+
+    // Inventory
+    'inventory.title': 'Gestão de Estoque',
+    'inventory.subtitle': 'Cadastre e organize categorias e itens do estoque',
+    'inventory.new_category': 'Nova Categoria',
+    'inventory.edit_category': 'Editar Categoria',
+    'inventory.category_name': 'Nome da categoria',
+    'inventory.category_placeholder': 'Ex: Proteínas, Laticínios...',
+    'inventory.create_category': 'Criar Categoria',
+    'inventory.save_changes': 'Salvar Alterações',
+    'inventory.no_categories': 'Nenhuma categoria',
+    'inventory.start_creating': 'Comece criando sua primeira categoria de produtos.',
+    'inventory.no_items_category': 'Nenhum item nesta categoria',
+    'inventory.add_first_item': 'Adicionar primeiro item',
+    'inventory.new_item': 'Novo Item',
+    'inventory.edit_item': 'Editar Item',
+    'inventory.product_name': 'Nome do produto',
+    'inventory.product_placeholder': 'Ex: Carne de sol, Frango...',
+    'inventory.category': 'Categoria',
+    'inventory.select_category': 'Selecione uma categoria',
+    'inventory.unit': 'Unidade',
+    'inventory.min_stock': 'Estoque mínimo',
+    'inventory.create_item': 'Criar Item',
+    'inventory.confirm_delete_category': 'Tem certeza? Isso irá excluir todos os itens desta categoria.',
+    'inventory.confirm_delete_item': 'Tem certeza que deseja excluir este item?',
+    'inventory.items': 'itens',
+    'inventory.item': 'item',
+
+    // Stock Entry
+    'stock_entry.title': 'Preenchimento de Estoque',
+    'stock_entry.subtitle': 'Atualize rapidamente as quantidades e validades',
+    'stock_entry.discard': 'Descartar',
+    'stock_entry.save_changes': 'Salvar Alterações',
+    'stock_entry.all_categories': 'Todas as categorias',
+    'stock_entry.search_product': 'Buscar produto...',
+    'stock_entry.expiring_legend': 'Próximo ao vencimento',
+    'stock_entry.low_stock_legend': 'Estoque abaixo do mínimo',
+    'stock_entry.no_items': 'Nenhum item encontrado',
+    'stock_entry.register_first': 'Cadastre itens na tela de Gestão de Estoque primeiro.',
+    'stock_entry.adjust_filters': 'Tente ajustar os filtros de busca.',
+    'stock_entry.no_changes': 'Nenhuma alteração para salvar',
+    'stock_entry.saved': 'Alterações salvas!',
+    'stock_entry.items_updated': 'itens atualizados',
+    'stock_entry.item_updated': 'item atualizado',
+    'stock_entry.below_min': 'abaixo do mínimo',
+    'stock_entry.near_expiry': 'próximo do vencimento',
+    'stock_entry.discard_confirm': 'Descartar todas as alterações?',
+    'stock_entry.select_date': 'Selecionar',
+
+    // Users
+    'users.title': 'Usuários',
+    'users.subtitle': 'Gerencie os usuários da sua operação',
+    'users.new_user': 'Novo Usuário',
+    'users.add_user': 'Adicionar Novo Usuário',
+    'users.full_name': 'Nome completo',
+    'users.user_type': 'Tipo de usuário',
+    'users.staff_desc': 'Staff - Pode preencher estoque',
+    'users.admin_desc': 'Admin - Acesso completo',
+    'users.create_user': 'Criar Usuário',
+    'users.creating': 'Criando...',
+    'users.no_users': 'Nenhum usuário',
+    'users.add_users_desc': 'Adicione usuários para gerenciar o estoque.',
+    'users.registered_at': 'Cadastrado em',
+    'users.you': '(você)',
+    'users.fill_all_fields': 'Preencha todos os campos',
+    'users.password_min': 'A senha deve ter pelo menos 6 caracteres',
+    'users.created_success': 'Usuário criado com sucesso!',
+    'users.email_exists': 'Este email já está cadastrado',
+    'users.create_error': 'Erro ao criar usuário',
+    'users.delete_self_error': 'Você não pode excluir seu próprio usuário',
+    'users.confirm_delete': 'Tem certeza que deseja excluir este usuário?',
+    'users.deleted': 'Usuário removido!',
+    'users.delete_error': 'Erro ao excluir usuário',
+    'users.load_error': 'Erro ao carregar usuários',
+
+    // Settings
+    'settings.title': 'Configurações',
+    'settings.subtitle': 'Personalize sua experiência no sistema',
+    'settings.language': 'Idioma',
+    'settings.language_desc': 'Selecione o idioma do sistema',
+    'settings.theme': 'Tema',
+    'settings.theme_desc': 'Escolha entre modo claro ou escuro',
+    'settings.light': 'Claro',
+    'settings.dark': 'Escuro',
+
+    // Table headers
+    'table.product': 'Produto',
+    'table.unit': 'Unidade',
+    'table.min_stock': 'Est. Mínimo',
+    'table.current_qty': 'Qtd Atual',
+    'table.count_date': 'Data Contagem',
+    'table.expiry': 'Validade',
+    'table.responsible': 'Responsável',
+    'table.category': 'Categoria',
+    'table.name': 'Nome',
+    'table.type': 'Tipo',
+
+    // Common
+    'common.loading': 'Carregando...',
+    'common.error': 'Erro',
+    'common.save': 'Salvar',
+    'common.cancel': 'Cancelar',
+    'common.delete': 'Excluir',
+    'common.edit': 'Editar',
+    'common.admin': 'Admin',
+    'common.staff': 'Staff',
+  },
+  'es': {
+    // Auth
+    'auth.title': 'Control de Inventario',
+    'auth.subtitle': 'Ingrese sus credenciales para acceder al sistema',
+    'auth.email': 'Correo electrónico',
+    'auth.password': 'Contraseña',
+    'auth.login': 'Iniciar sesión',
+    'auth.logging_in': 'Iniciando...',
+    'auth.fill_all_fields': 'Por favor, complete todos los campos.',
+    'auth.invalid_credentials': 'Correo o contraseña incorrectos.',
+    'auth.error': 'Error al iniciar sesión. Inténtelo de nuevo.',
+    'auth.success': '¡Inicio de sesión exitoso!',
+    'auth.welcome': 'Bienvenido al sistema de inventario.',
+    'auth.test_users': 'Usuarios de prueba:',
+
+    // Sidebar
+    'nav.dashboard': 'Panel',
+    'nav.inventory': 'Gestión de Inventario',
+    'nav.stock_entry': 'Registro',
+    'nav.users': 'Usuarios',
+    'nav.settings': 'Configuración',
+    'nav.logout': 'Salir',
+
+    // Dashboard
+    'dashboard.title': 'Panel',
+    'dashboard.subtitle': 'Bienvenido al sistema de control de inventario',
+    'dashboard.total_items': 'Total de Artículos',
+    'dashboard.low_stock': 'Stock Bajo',
+    'dashboard.expiring_soon': 'Próximo a Vencer',
+    'dashboard.up_to_date': 'Al Día',
+    'dashboard.quick_info': 'Información Rápida',
+    'dashboard.your_profile': 'Tu perfil',
+    'dashboard.color_legend': 'Leyenda de colores',
+    'dashboard.expiring_legend': 'Artículo próximo a vencer (1 día o menos)',
+    'dashboard.low_stock_legend': 'Stock por debajo del mínimo',
+
+    // Inventory
+    'inventory.title': 'Gestión de Inventario',
+    'inventory.subtitle': 'Registre y organice categorías y artículos del inventario',
+    'inventory.new_category': 'Nueva Categoría',
+    'inventory.edit_category': 'Editar Categoría',
+    'inventory.category_name': 'Nombre de la categoría',
+    'inventory.category_placeholder': 'Ej: Proteínas, Lácteos...',
+    'inventory.create_category': 'Crear Categoría',
+    'inventory.save_changes': 'Guardar Cambios',
+    'inventory.no_categories': 'Sin categorías',
+    'inventory.start_creating': 'Comience creando su primera categoría de productos.',
+    'inventory.no_items_category': 'Sin artículos en esta categoría',
+    'inventory.add_first_item': 'Agregar primer artículo',
+    'inventory.new_item': 'Nuevo Artículo',
+    'inventory.edit_item': 'Editar Artículo',
+    'inventory.product_name': 'Nombre del producto',
+    'inventory.product_placeholder': 'Ej: Carne seca, Pollo...',
+    'inventory.category': 'Categoría',
+    'inventory.select_category': 'Seleccione una categoría',
+    'inventory.unit': 'Unidad',
+    'inventory.min_stock': 'Stock mínimo',
+    'inventory.create_item': 'Crear Artículo',
+    'inventory.confirm_delete_category': '¿Está seguro? Esto eliminará todos los artículos de esta categoría.',
+    'inventory.confirm_delete_item': '¿Está seguro de que desea eliminar este artículo?',
+    'inventory.items': 'artículos',
+    'inventory.item': 'artículo',
+
+    // Stock Entry
+    'stock_entry.title': 'Registro de Inventario',
+    'stock_entry.subtitle': 'Actualice rápidamente cantidades y fechas de vencimiento',
+    'stock_entry.discard': 'Descartar',
+    'stock_entry.save_changes': 'Guardar Cambios',
+    'stock_entry.all_categories': 'Todas las categorías',
+    'stock_entry.search_product': 'Buscar producto...',
+    'stock_entry.expiring_legend': 'Próximo a vencer',
+    'stock_entry.low_stock_legend': 'Stock por debajo del mínimo',
+    'stock_entry.no_items': 'No se encontraron artículos',
+    'stock_entry.register_first': 'Registre artículos en la pantalla de Gestión de Inventario primero.',
+    'stock_entry.adjust_filters': 'Intente ajustar los filtros de búsqueda.',
+    'stock_entry.no_changes': 'Sin cambios para guardar',
+    'stock_entry.saved': '¡Cambios guardados!',
+    'stock_entry.items_updated': 'artículos actualizados',
+    'stock_entry.item_updated': 'artículo actualizado',
+    'stock_entry.below_min': 'por debajo del mínimo',
+    'stock_entry.near_expiry': 'próximo al vencimiento',
+    'stock_entry.discard_confirm': '¿Descartar todos los cambios?',
+    'stock_entry.select_date': 'Seleccionar',
+
+    // Users
+    'users.title': 'Usuarios',
+    'users.subtitle': 'Gestione los usuarios de su operación',
+    'users.new_user': 'Nuevo Usuario',
+    'users.add_user': 'Agregar Nuevo Usuario',
+    'users.full_name': 'Nombre completo',
+    'users.user_type': 'Tipo de usuario',
+    'users.staff_desc': 'Staff - Puede registrar inventario',
+    'users.admin_desc': 'Admin - Acceso completo',
+    'users.create_user': 'Crear Usuario',
+    'users.creating': 'Creando...',
+    'users.no_users': 'Sin usuarios',
+    'users.add_users_desc': 'Agregue usuarios para gestionar el inventario.',
+    'users.registered_at': 'Registrado el',
+    'users.you': '(tú)',
+    'users.fill_all_fields': 'Complete todos los campos',
+    'users.password_min': 'La contraseña debe tener al menos 6 caracteres',
+    'users.created_success': '¡Usuario creado exitosamente!',
+    'users.email_exists': 'Este correo ya está registrado',
+    'users.create_error': 'Error al crear usuario',
+    'users.delete_self_error': 'No puede eliminar su propio usuario',
+    'users.confirm_delete': '¿Está seguro de que desea eliminar este usuario?',
+    'users.deleted': '¡Usuario eliminado!',
+    'users.delete_error': 'Error al eliminar usuario',
+    'users.load_error': 'Error al cargar usuarios',
+
+    // Settings
+    'settings.title': 'Configuración',
+    'settings.subtitle': 'Personalice su experiencia en el sistema',
+    'settings.language': 'Idioma',
+    'settings.language_desc': 'Seleccione el idioma del sistema',
+    'settings.theme': 'Tema',
+    'settings.theme_desc': 'Elija entre modo claro u oscuro',
+    'settings.light': 'Claro',
+    'settings.dark': 'Oscuro',
+
+    // Table headers
+    'table.product': 'Producto',
+    'table.unit': 'Unidad',
+    'table.min_stock': 'Stock Mín.',
+    'table.current_qty': 'Cant. Actual',
+    'table.count_date': 'Fecha Conteo',
+    'table.expiry': 'Vencimiento',
+    'table.responsible': 'Responsable',
+    'table.category': 'Categoría',
+    'table.name': 'Nombre',
+    'table.type': 'Tipo',
+
+    // Common
+    'common.loading': 'Cargando...',
+    'common.error': 'Error',
+    'common.save': 'Guardar',
+    'common.cancel': 'Cancelar',
+    'common.delete': 'Eliminar',
+    'common.edit': 'Editar',
+    'common.admin': 'Admin',
+    'common.staff': 'Staff',
+  },
+  'en': {
+    // Auth
+    'auth.title': 'Inventory Control',
+    'auth.subtitle': 'Enter your credentials to access the system',
+    'auth.email': 'Email',
+    'auth.password': 'Password',
+    'auth.login': 'Sign In',
+    'auth.logging_in': 'Signing in...',
+    'auth.fill_all_fields': 'Please fill in all fields.',
+    'auth.invalid_credentials': 'Invalid email or password.',
+    'auth.error': 'Login failed. Please try again.',
+    'auth.success': 'Login successful!',
+    'auth.welcome': 'Welcome to the inventory system.',
+    'auth.test_users': 'Test users:',
+
+    // Sidebar
+    'nav.dashboard': 'Dashboard',
+    'nav.inventory': 'Inventory Management',
+    'nav.stock_entry': 'Stock Entry',
+    'nav.users': 'Users',
+    'nav.settings': 'Settings',
+    'nav.logout': 'Logout',
+
+    // Dashboard
+    'dashboard.title': 'Dashboard',
+    'dashboard.subtitle': 'Welcome to the inventory control system',
+    'dashboard.total_items': 'Total Items',
+    'dashboard.low_stock': 'Low Stock',
+    'dashboard.expiring_soon': 'Expiring Soon',
+    'dashboard.up_to_date': 'Up to Date',
+    'dashboard.quick_info': 'Quick Info',
+    'dashboard.your_profile': 'Your profile',
+    'dashboard.color_legend': 'Color legend',
+    'dashboard.expiring_legend': 'Item expiring soon (1 day or less)',
+    'dashboard.low_stock_legend': 'Stock below minimum',
+
+    // Inventory
+    'inventory.title': 'Inventory Management',
+    'inventory.subtitle': 'Register and organize categories and inventory items',
+    'inventory.new_category': 'New Category',
+    'inventory.edit_category': 'Edit Category',
+    'inventory.category_name': 'Category name',
+    'inventory.category_placeholder': 'Ex: Proteins, Dairy...',
+    'inventory.create_category': 'Create Category',
+    'inventory.save_changes': 'Save Changes',
+    'inventory.no_categories': 'No categories',
+    'inventory.start_creating': 'Start by creating your first product category.',
+    'inventory.no_items_category': 'No items in this category',
+    'inventory.add_first_item': 'Add first item',
+    'inventory.new_item': 'New Item',
+    'inventory.edit_item': 'Edit Item',
+    'inventory.product_name': 'Product name',
+    'inventory.product_placeholder': 'Ex: Dried meat, Chicken...',
+    'inventory.category': 'Category',
+    'inventory.select_category': 'Select a category',
+    'inventory.unit': 'Unit',
+    'inventory.min_stock': 'Minimum stock',
+    'inventory.create_item': 'Create Item',
+    'inventory.confirm_delete_category': 'Are you sure? This will delete all items in this category.',
+    'inventory.confirm_delete_item': 'Are you sure you want to delete this item?',
+    'inventory.items': 'items',
+    'inventory.item': 'item',
+
+    // Stock Entry
+    'stock_entry.title': 'Stock Entry',
+    'stock_entry.subtitle': 'Quickly update quantities and expiry dates',
+    'stock_entry.discard': 'Discard',
+    'stock_entry.save_changes': 'Save Changes',
+    'stock_entry.all_categories': 'All categories',
+    'stock_entry.search_product': 'Search product...',
+    'stock_entry.expiring_legend': 'Expiring soon',
+    'stock_entry.low_stock_legend': 'Stock below minimum',
+    'stock_entry.no_items': 'No items found',
+    'stock_entry.register_first': 'Register items in Inventory Management first.',
+    'stock_entry.adjust_filters': 'Try adjusting the search filters.',
+    'stock_entry.no_changes': 'No changes to save',
+    'stock_entry.saved': 'Changes saved!',
+    'stock_entry.items_updated': 'items updated',
+    'stock_entry.item_updated': 'item updated',
+    'stock_entry.below_min': 'below minimum',
+    'stock_entry.near_expiry': 'near expiry',
+    'stock_entry.discard_confirm': 'Discard all changes?',
+    'stock_entry.select_date': 'Select',
+
+    // Users
+    'users.title': 'Users',
+    'users.subtitle': 'Manage your operation users',
+    'users.new_user': 'New User',
+    'users.add_user': 'Add New User',
+    'users.full_name': 'Full name',
+    'users.user_type': 'User type',
+    'users.staff_desc': 'Staff - Can enter stock',
+    'users.admin_desc': 'Admin - Full access',
+    'users.create_user': 'Create User',
+    'users.creating': 'Creating...',
+    'users.no_users': 'No users',
+    'users.add_users_desc': 'Add users to manage inventory.',
+    'users.registered_at': 'Registered on',
+    'users.you': '(you)',
+    'users.fill_all_fields': 'Fill in all fields',
+    'users.password_min': 'Password must be at least 6 characters',
+    'users.created_success': 'User created successfully!',
+    'users.email_exists': 'This email is already registered',
+    'users.create_error': 'Error creating user',
+    'users.delete_self_error': 'You cannot delete your own user',
+    'users.confirm_delete': 'Are you sure you want to delete this user?',
+    'users.deleted': 'User removed!',
+    'users.delete_error': 'Error deleting user',
+    'users.load_error': 'Error loading users',
+
+    // Settings
+    'settings.title': 'Settings',
+    'settings.subtitle': 'Customize your system experience',
+    'settings.language': 'Language',
+    'settings.language_desc': 'Select the system language',
+    'settings.theme': 'Theme',
+    'settings.theme_desc': 'Choose between light or dark mode',
+    'settings.light': 'Light',
+    'settings.dark': 'Dark',
+
+    // Table headers
+    'table.product': 'Product',
+    'table.unit': 'Unit',
+    'table.min_stock': 'Min. Stock',
+    'table.current_qty': 'Current Qty',
+    'table.count_date': 'Count Date',
+    'table.expiry': 'Expiry',
+    'table.responsible': 'Responsible',
+    'table.category': 'Category',
+    'table.name': 'Name',
+    'table.type': 'Type',
+
+    // Common
+    'common.loading': 'Loading...',
+    'common.error': 'Error',
+    'common.save': 'Save',
+    'common.cancel': 'Cancel',
+    'common.delete': 'Delete',
+    'common.edit': 'Edit',
+    'common.admin': 'Admin',
+    'common.staff': 'Staff',
+  },
+};
+
+const LANGUAGE_KEY = 'app_language';
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<Language>(() => {
+    const saved = localStorage.getItem(LANGUAGE_KEY);
+    if (saved && ['pt-BR', 'es', 'en'].includes(saved)) {
+      return saved as Language;
+    }
+    return 'pt-BR'; // Default - will show language selector on first load
+  });
+
+  const [showSelector, setShowSelector] = useState(() => {
+    return !localStorage.getItem(LANGUAGE_KEY);
+  });
+
+  useEffect(() => {
+    localStorage.setItem(LANGUAGE_KEY, language);
+  }, [language]);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    setShowSelector(false);
+  };
+
+  const t = (key: string): string => {
+    return translations[language][key] || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+}
+
+export function useShowLanguageSelector() {
+  return !localStorage.getItem(LANGUAGE_KEY);
+}
