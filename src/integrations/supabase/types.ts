@@ -195,30 +195,36 @@ export type Database = {
           created_at: string | null
           id: string
           item_id: string
+          movement_type: string
           new_expiry: string | null
           new_stock: number
           previous_expiry: string | null
           previous_stock: number | null
+          reason: string | null
         }
         Insert: {
           changed_by: string
           created_at?: string | null
           id?: string
           item_id: string
+          movement_type?: string
           new_expiry?: string | null
           new_stock: number
           previous_expiry?: string | null
           previous_stock?: number | null
+          reason?: string | null
         }
         Update: {
           changed_by?: string
           created_at?: string | null
           id?: string
           item_id?: string
+          movement_type?: string
           new_expiry?: string | null
           new_stock?: number
           previous_expiry?: string | null
           previous_stock?: number | null
+          reason?: string | null
         }
         Relationships: [
           {
