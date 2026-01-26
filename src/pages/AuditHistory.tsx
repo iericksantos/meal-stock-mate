@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, FileText, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR, es, enUS } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface StockHistoryEntry {
   id: string;
@@ -243,37 +244,51 @@ export default function AuditHistory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredHistory.map((entry, index) => (
-                    <TableRow 
-                      key={entry.id}
-                      className={index % 2 === 1 ? 'bg-table-row-alt' : ''}
-                    >
-                      <TableCell className="whitespace-nowrap">
-                        {format(parseISO(entry.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: getLocale() })}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {entry.user_email}
-                      </TableCell>
-                      <TableCell>
-                        {entry.item_name}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getMovementIcon(entry.movement_type)}
-                          {getMovementBadge(entry.movement_type)}
-                        </div>
-                      </TableCell>
-                      <TableCell className={entry.movement_type === 'withdrawal' ? 'text-destructive font-medium' : 'text-success font-medium'}>
-                        {calculateQuantityChange(entry)}
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        {entry.new_stock}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                        {entry.reason || '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredHistory.map((entry, index) => {
+                    const isPositiveMovement = entry.movement_type === 'entry';
+                    const isNegativeMovement = entry.movement_type === 'withdrawal' || 
+                      (entry.movement_type === 'adjustment' && (entry.new_stock < (entry.previous_stock ?? 0)));
+                    
+                    return (
+                      <TableRow 
+                        key={entry.id}
+                        className={cn(
+                          index % 2 === 1 ? 'bg-table-row-alt' : '',
+                          isPositiveMovement && 'border-l-4 border-l-success',
+                          isNegativeMovement && 'border-l-4 border-l-destructive'
+                        )}
+                      >
+                        <TableCell className="whitespace-nowrap">
+                          {format(parseISO(entry.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: getLocale() })}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {entry.user_email}
+                        </TableCell>
+                        <TableCell>
+                          {entry.item_name}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getMovementIcon(entry.movement_type)}
+                            {getMovementBadge(entry.movement_type)}
+                          </div>
+                        </TableCell>
+                        <TableCell className={cn(
+                          'font-bold',
+                          isPositiveMovement && 'text-success',
+                          isNegativeMovement && 'text-destructive'
+                        )}>
+                          {calculateQuantityChange(entry)}
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          {entry.new_stock}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground max-w-[200px] truncate">
+                          {entry.reason || '-'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

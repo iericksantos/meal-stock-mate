@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,8 @@ import { StockWithdrawalModal } from '@/components/StockWithdrawalModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -57,7 +59,7 @@ interface EditedItem {
 }
 
 export default function StockEntry() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -155,6 +157,13 @@ export default function StockEntry() {
     if (!item) return;
 
     const newStock = parseFloat(value) || 0;
+    
+    // Security: Staff users can only INCREMENT stock, not decrease
+    // Any stock reduction must go through the official withdrawal flow
+    if (!isAdmin && newStock < item.current_stock) {
+      return; // Silently block - staff cannot decrease stock via input
+    }
+    
     const newEdited = new Map(editedItems);
 
     if (!newEdited.has(itemId)) {
@@ -223,6 +232,21 @@ export default function StockEntry() {
         const item = items.find((i) => i.id === itemId);
         if (!item) continue;
 
+        // Security check: Staff users cannot decrease stock via this route
+        // They must use the official withdrawal flow
+        if (!isAdmin && edited.current_stock < edited.original_stock) {
+          toast({
+            title: t('common.error'),
+            description: t('stock_entry.staff_no_decrease'),
+            variant: 'destructive',
+          });
+          continue;
+        }
+
+        // Determine movement type based on stock change
+        const stockDiff = edited.current_stock - edited.original_stock;
+        const movementType = stockDiff > 0 ? 'entry' : stockDiff < 0 ? 'adjustment' : 'adjustment';
+
         const { error } = await supabase
           .from('items')
           .update({
@@ -242,6 +266,8 @@ export default function StockEntry() {
           previous_expiry: edited.original_expiry,
           new_expiry: edited.expiry_date,
           changed_by: user?.id,
+          movement_type: movementType,
+          reason: stockDiff > 0 ? t('stock_entry.entry_reason') : t('stock_entry.adjustment_reason'),
         });
 
         updatedCount++;
@@ -398,6 +424,16 @@ export default function StockEntry() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Staff Restriction Notice */}
+        {!isAdmin && (
+          <Alert className="border-primary/30 bg-primary/5">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              {t('stock_entry.staff_restriction_notice')}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Legend */}
         <div className="flex flex-wrap gap-4 text-sm">
