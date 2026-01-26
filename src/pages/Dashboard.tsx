@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,6 +18,7 @@ interface StockStats {
 export default function Dashboard() {
   const { user, role } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<StockStats>({
     totalItems: 0,
     lowStock: 0,
@@ -66,6 +68,12 @@ export default function Dashboard() {
     fetchStats();
   }, []);
 
+  const handleCardClick = (filter?: string) => {
+    if (filter) {
+      navigate(`/stock-entry?filter=${filter}`);
+    }
+  };
+
   const statCards = [
     {
       titleKey: 'dashboard.total_items',
@@ -73,6 +81,7 @@ export default function Dashboard() {
       icon: Package,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
+      clickable: false,
     },
     {
       titleKey: 'dashboard.low_stock',
@@ -80,6 +89,8 @@ export default function Dashboard() {
       icon: AlertTriangle,
       color: 'text-warning',
       bgColor: 'bg-warning/10',
+      clickable: true,
+      filter: 'low-stock',
     },
     {
       titleKey: 'dashboard.expiring_soon',
@@ -87,6 +98,8 @@ export default function Dashboard() {
       icon: Clock,
       color: 'text-destructive',
       bgColor: 'bg-destructive/10',
+      clickable: true,
+      filter: 'expiring',
     },
     {
       titleKey: 'dashboard.up_to_date',
@@ -94,6 +107,7 @@ export default function Dashboard() {
       icon: CheckCircle,
       color: 'text-success',
       bgColor: 'bg-success/10',
+      clickable: false,
     },
   ];
 
@@ -110,7 +124,15 @@ export default function Dashboard() {
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {statCards.map((stat) => (
-            <Card key={stat.titleKey} className="animate-fade-in">
+            <Card 
+              key={stat.titleKey} 
+              className={`animate-fade-in transition-all ${
+                stat.clickable 
+                  ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02] hover:border-primary/50' 
+                  : ''
+              }`}
+              onClick={() => stat.clickable && stat.filter && handleCardClick(stat.filter)}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {t(stat.titleKey)}
@@ -123,6 +145,11 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold">
                   {loading ? '...' : stat.value}
                 </div>
+                {stat.clickable && stat.value > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('dashboard.click_to_view')}
+                  </p>
+                )}
               </CardContent>
             </Card>
           ))}

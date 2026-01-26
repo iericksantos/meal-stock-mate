@@ -28,6 +28,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.dashboard': 'Dashboard',
     'nav.inventory': 'Gestão de Estoque',
     'nav.stock_entry': 'Preenchimento',
+    'nav.audit_history': 'Histórico de Auditoria',
     'nav.users': 'Usuários',
     'nav.settings': 'Configurações',
     'nav.logout': 'Sair',
@@ -44,6 +45,7 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.color_legend': 'Legenda de cores',
     'dashboard.expiring_legend': 'Item próximo ao vencimento (1 dia ou menos)',
     'dashboard.low_stock_legend': 'Estoque abaixo do mínimo',
+    'dashboard.click_to_view': 'Clique para ver detalhes',
 
     // Inventory
     'inventory.title': 'Gestão de Estoque',
@@ -92,6 +94,9 @@ const translations: Record<Language, Record<string, string>> = {
     'stock_entry.near_expiry': 'próximo do vencimento',
     'stock_entry.discard_confirm': 'Descartar todas as alterações?',
     'stock_entry.select_date': 'Selecionar',
+    'stock_entry.filter_low_stock': 'Filtrando: Estoque Baixo',
+    'stock_entry.filter_expiring': 'Filtrando: Próximo ao Vencimento',
+    'stock_entry.clear_filter': 'Limpar filtro',
 
     // Users
     'users.title': 'Usuários',
@@ -180,6 +185,26 @@ const translations: Record<Language, Record<string, string>> = {
     'withdrawal.low_stock_warning': 'Atenção: O estoque ficará abaixo do mínimo!',
     'withdrawal.remaining_after': 'Restará',
     'withdrawal.button': 'Baixa de Estoque',
+
+    // Audit History
+    'audit.title': 'Histórico de Auditoria',
+    'audit.subtitle': 'Visualize todas as movimentações de estoque',
+    'audit.search_placeholder': 'Buscar por produto, usuário ou motivo...',
+    'audit.all_movements': 'Todos os movimentos',
+    'audit.type_withdrawal': 'Baixa',
+    'audit.type_entry': 'Entrada',
+    'audit.type_adjustment': 'Ajuste',
+    'audit.no_records': 'Nenhum registro',
+    'audit.no_records_desc': 'Ainda não há movimentações de estoque registradas.',
+    'audit.records_label': 'registros',
+    'audit.col_datetime': 'Data/Hora',
+    'audit.col_user': 'Usuário',
+    'audit.col_product': 'Produto',
+    'audit.col_type': 'Tipo',
+    'audit.col_quantity': 'Qtd Movimentada',
+    'audit.col_balance': 'Saldo Final',
+    'audit.col_reason': 'Motivo',
+    'audit.unknown_product': 'Produto desconhecido',
   },
   'es': {
     // Auth
@@ -200,6 +225,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.dashboard': 'Panel',
     'nav.inventory': 'Gestión de Inventario',
     'nav.stock_entry': 'Registro',
+    'nav.audit_history': 'Historial de Auditoría',
     'nav.users': 'Usuarios',
     'nav.settings': 'Configuración',
     'nav.logout': 'Salir',
@@ -216,6 +242,7 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.color_legend': 'Leyenda de colores',
     'dashboard.expiring_legend': 'Artículo próximo a vencer (1 día o menos)',
     'dashboard.low_stock_legend': 'Stock por debajo del mínimo',
+    'dashboard.click_to_view': 'Clic para ver detalles',
 
     // Inventory
     'inventory.title': 'Gestión de Inventario',
@@ -264,6 +291,9 @@ const translations: Record<Language, Record<string, string>> = {
     'stock_entry.near_expiry': 'próximo al vencimiento',
     'stock_entry.discard_confirm': '¿Descartar todos los cambios?',
     'stock_entry.select_date': 'Seleccionar',
+    'stock_entry.filter_low_stock': 'Filtrando: Stock Bajo',
+    'stock_entry.filter_expiring': 'Filtrando: Próximo a Vencer',
+    'stock_entry.clear_filter': 'Limpiar filtro',
 
     // Users
     'users.title': 'Usuarios',
@@ -352,6 +382,26 @@ const translations: Record<Language, Record<string, string>> = {
     'withdrawal.low_stock_warning': '¡Atención: El stock quedará por debajo del mínimo!',
     'withdrawal.remaining_after': 'Quedará',
     'withdrawal.button': 'Baja de Stock',
+
+    // Audit History
+    'audit.title': 'Historial de Auditoría',
+    'audit.subtitle': 'Visualice todos los movimientos de inventario',
+    'audit.search_placeholder': 'Buscar por producto, usuario o motivo...',
+    'audit.all_movements': 'Todos los movimientos',
+    'audit.type_withdrawal': 'Baja',
+    'audit.type_entry': 'Entrada',
+    'audit.type_adjustment': 'Ajuste',
+    'audit.no_records': 'Sin registros',
+    'audit.no_records_desc': 'Aún no hay movimientos de inventario registrados.',
+    'audit.records_label': 'registros',
+    'audit.col_datetime': 'Fecha/Hora',
+    'audit.col_user': 'Usuario',
+    'audit.col_product': 'Producto',
+    'audit.col_type': 'Tipo',
+    'audit.col_quantity': 'Cant. Movida',
+    'audit.col_balance': 'Saldo Final',
+    'audit.col_reason': 'Motivo',
+    'audit.unknown_product': 'Producto desconocido',
   },
   'en': {
     // Auth
@@ -372,6 +422,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.dashboard': 'Dashboard',
     'nav.inventory': 'Inventory Management',
     'nav.stock_entry': 'Stock Entry',
+    'nav.audit_history': 'Audit History',
     'nav.users': 'Users',
     'nav.settings': 'Settings',
     'nav.logout': 'Logout',
@@ -388,6 +439,7 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.color_legend': 'Color legend',
     'dashboard.expiring_legend': 'Item expiring soon (1 day or less)',
     'dashboard.low_stock_legend': 'Stock below minimum',
+    'dashboard.click_to_view': 'Click to view details',
 
     // Inventory
     'inventory.title': 'Inventory Management',
@@ -436,6 +488,9 @@ const translations: Record<Language, Record<string, string>> = {
     'stock_entry.near_expiry': 'near expiry',
     'stock_entry.discard_confirm': 'Discard all changes?',
     'stock_entry.select_date': 'Select',
+    'stock_entry.filter_low_stock': 'Filtering: Low Stock',
+    'stock_entry.filter_expiring': 'Filtering: Expiring Soon',
+    'stock_entry.clear_filter': 'Clear filter',
 
     // Users
     'users.title': 'Users',
@@ -524,6 +579,26 @@ const translations: Record<Language, Record<string, string>> = {
     'withdrawal.low_stock_warning': 'Warning: Stock will be below minimum!',
     'withdrawal.remaining_after': 'Remaining',
     'withdrawal.button': 'Stock Withdrawal',
+
+    // Audit History
+    'audit.title': 'Audit History',
+    'audit.subtitle': 'View all stock movements',
+    'audit.search_placeholder': 'Search by product, user or reason...',
+    'audit.all_movements': 'All movements',
+    'audit.type_withdrawal': 'Withdrawal',
+    'audit.type_entry': 'Entry',
+    'audit.type_adjustment': 'Adjustment',
+    'audit.no_records': 'No records',
+    'audit.no_records_desc': 'No stock movements recorded yet.',
+    'audit.records_label': 'records',
+    'audit.col_datetime': 'Date/Time',
+    'audit.col_user': 'User',
+    'audit.col_product': 'Product',
+    'audit.col_type': 'Type',
+    'audit.col_quantity': 'Qty Moved',
+    'audit.col_balance': 'Final Balance',
+    'audit.col_reason': 'Reason',
+    'audit.unknown_product': 'Unknown product',
   },
 };
 

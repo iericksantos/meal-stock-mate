@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -59,6 +60,7 @@ export default function StockEntry() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [rawItems, setRawItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,9 +70,18 @@ export default function StockEntry() {
   const [editedItems, setEditedItems] = useState<Map<string, EditedItem>>(new Map());
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [selectedItemForWithdrawal, setSelectedItemForWithdrawal] = useState<string | undefined>();
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   // Use realtime items hook
   const { items, setItems } = useRealtimeItems(rawItems);
+
+  // Read filter from URL on mount
+  useEffect(() => {
+    const filter = searchParams.get('filter');
+    if (filter) {
+      setActiveFilter(filter);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchData();
@@ -114,10 +125,29 @@ export default function StockEntry() {
     setWithdrawalModalOpen(true);
   };
 
+  const clearFilter = () => {
+    setActiveFilter(null);
+    setSearchParams({});
+  };
+
   const filteredItems = items.filter((item) => {
     const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    
+    // Apply URL filter
+    let matchesUrlFilter = true;
+    if (activeFilter === 'low-stock') {
+      matchesUrlFilter = item.current_stock < item.min_stock;
+    } else if (activeFilter === 'expiring') {
+      if (item.expiry_date) {
+        const daysUntilExpiry = differenceInDays(parseISO(item.expiry_date), new Date());
+        matchesUrlFilter = daysUntilExpiry <= 1 && daysUntilExpiry >= 0;
+      } else {
+        matchesUrlFilter = false;
+      }
+    }
+    
+    return matchesCategory && matchesSearch && matchesUrlFilter;
   });
 
   const handleStockChange = (itemId: string, value: string) => {
@@ -315,6 +345,27 @@ export default function StockEntry() {
             </Button>
           </div>
         </div>
+
+        {/* Active Filter Badge */}
+        {activeFilter && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  {activeFilter === 'low-stock' 
+                    ? t('stock_entry.filter_low_stock') 
+                    : t('stock_entry.filter_expiring')}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  ({filteredItems.length} {filteredItems.length === 1 ? t('inventory.item') : t('inventory.items')})
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={clearFilter}>
+                {t('stock_entry.clear_filter')}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Filters */}
         <Card>
