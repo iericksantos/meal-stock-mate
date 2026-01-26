@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRealtimeItems } from '@/hooks/useRealtimeItems';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { StockWithdrawalModal } from '@/components/StockWithdrawalModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Save, RotateCcw, Package } from 'lucide-react';
+import { Search, Save, RotateCcw, Package, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -58,12 +60,17 @@ export default function StockEntry() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
+  const [rawItems, setRawItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [editedItems, setEditedItems] = useState<Map<string, EditedItem>>(new Map());
+  const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
+  const [selectedItemForWithdrawal, setSelectedItemForWithdrawal] = useState<string | undefined>();
+
+  // Use realtime items hook
+  const { items, setItems } = useRealtimeItems(rawItems);
 
   useEffect(() => {
     fetchData();
@@ -80,7 +87,7 @@ export default function StockEntry() {
       if (itemsRes.error) throw itemsRes.error;
 
       setCategories(categoriesRes.data || []);
-      setItems(itemsRes.data || []);
+      setRawItems(itemsRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -90,6 +97,21 @@ export default function StockEntry() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleWithdrawalComplete = useCallback((itemId: string, newStock: number) => {
+    // Optimistically update the local state
+    setItems(current =>
+      current.map(item =>
+        item.id === itemId ? { ...item, current_stock: newStock } : item
+      )
+    );
+    setSelectedItemForWithdrawal(undefined);
+  }, [setItems]);
+
+  const openWithdrawalForItem = (itemId: string) => {
+    setSelectedItemForWithdrawal(itemId);
+    setWithdrawalModalOpen(true);
   };
 
   const filteredItems = items.filter((item) => {
@@ -263,7 +285,14 @@ export default function StockEntry() {
               {t('stock_entry.subtitle')}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="destructive"
+              onClick={() => setWithdrawalModalOpen(true)}
+            >
+              <Minus className="mr-2 h-4 w-4" />
+              {t('withdrawal.button')}
+            </Button>
             <Button
               variant="outline"
               onClick={handleDiscard}
@@ -421,6 +450,16 @@ export default function StockEntry() {
             </div>
           </Card>
         )}
+
+        {/* Stock Withdrawal Modal */}
+        <StockWithdrawalModal
+          open={withdrawalModalOpen}
+          onOpenChange={setWithdrawalModalOpen}
+          items={items}
+          categories={categories}
+          onWithdrawalComplete={handleWithdrawalComplete}
+          preselectedItemId={selectedItemForWithdrawal}
+        />
       </div>
     </DashboardLayout>
   );
