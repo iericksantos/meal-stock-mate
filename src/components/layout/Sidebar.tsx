@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   Menu,
   Settings,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -35,6 +36,12 @@ const navItems = [
     href: '/stock-entry',
     icon: ClipboardList,
     roles: ['admin', 'staff'],
+  },
+  {
+    titleKey: 'nav.audit_history',
+    href: '/audit-history',
+    icon: FileText,
+    roles: ['admin'],
   },
   {
     titleKey: 'nav.users',
