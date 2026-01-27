@@ -208,6 +208,7 @@ const translations: Record<Language, Record<string, string>> = {
     'audit.col_balance': 'Saldo Final',
     'audit.col_reason': 'Motivo',
     'audit.unknown_product': 'Produto desconhecido',
+    'audit.unknown_user': 'Usuário desconhecido',
   },
   'es': {
     // Auth
@@ -408,6 +409,7 @@ const translations: Record<Language, Record<string, string>> = {
     'audit.col_balance': 'Saldo Final',
     'audit.col_reason': 'Motivo',
     'audit.unknown_product': 'Producto desconocido',
+    'audit.unknown_user': 'Usuario desconocido',
   },
   'en': {
     // Auth
@@ -608,6 +610,7 @@ const translations: Record<Language, Record<string, string>> = {
     'audit.col_balance': 'Final Balance',
     'audit.col_reason': 'Reason',
     'audit.unknown_product': 'Unknown product',
+    'audit.unknown_user': 'Unknown user',
   },
 };
 

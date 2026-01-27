@@ -97,25 +97,27 @@ export default function AuditHistory() {
 
       if (error) throw error;
 
-      // Get unique user IDs
+      // Get unique user IDs from history
       const userIds = [...new Set(historyData?.map(h => h.changed_by) || [])];
       
-      // Fetch profiles for user emails
+      // Fetch profiles for user full names - this returns the actual user identity
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('user_id, full_name')
         .in('user_id', userIds);
 
+      // Map user_id to full_name for display in the audit table
       const profilesMap = new Map<string, string>();
       profilesData?.forEach(p => {
         profilesMap.set(p.user_id, p.full_name);
       });
 
-      // Also try to get emails from user_roles if needed
+      // Enrich history with user names and product names
       const enrichedHistory = historyData?.map(h => ({
         ...h,
         item_name: itemsMap.get(h.item_id) || t('audit.unknown_product'),
-        user_email: profilesMap.get(h.changed_by) || h.changed_by.slice(0, 8) + '...',
+        // Display full_name from profiles table, not the role
+        user_email: profilesMap.get(h.changed_by) || t('audit.unknown_user'),
       })) || [];
 
       setHistory(enrichedHistory);
