@@ -10,7 +10,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   full_name: string;
-  role: "admin" | "staff";
+  role: "host" | "admin" | "staff";
 }
 
 serve(async (req) => {
@@ -62,12 +62,14 @@ serve(async (req) => {
       .eq("user_id", currentUser.id)
       .single();
 
-    if (roleError || roleData?.role !== "admin") {
+    if (roleError || !roleData) {
       return new Response(
-        JSON.stringify({ error: "Access denied. Admin role required." }),
+        JSON.stringify({ error: "Access denied. Role not found." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const requesterRole = roleData.role;
 
     // Parse request body
     const body: CreateUserRequest = await req.json();
@@ -88,10 +90,27 @@ serve(async (req) => {
       );
     }
 
-    if (!["admin", "staff"].includes(role)) {
+    if (!["host", "admin", "staff"].includes(role)) {
       return new Response(
-        JSON.stringify({ error: "Role must be 'admin' or 'staff'" }),
+        JSON.stringify({ error: "Role must be 'host', 'admin' or 'staff'" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // HIERARCHY CHECK
+    // Host can create any role
+    // Admin can only create staff
+    if (requesterRole === 'admin' && role !== 'staff') {
+      return new Response(
+        JSON.stringify({ error: "permission_denied", message: "Admins can only create staff users" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (requesterRole === 'staff') {
+      return new Response(
+        JSON.stringify({ error: "permission_denied", message: "Staff cannot create users" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
