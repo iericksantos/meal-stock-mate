@@ -58,6 +58,13 @@ interface Item {
   expiry_date: string | null;
   last_count_date: string | null;
   last_counted_by: string | null;
+  supplier_id: string | null;
+}
+
+interface Supplier {
+  id: string;
+  name: string;
+  whatsapp: string;
 }
 
 interface Profile {
@@ -74,6 +81,7 @@ export default function Inventory() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -86,6 +94,7 @@ export default function Inventory() {
     category_id: '',
     unit: 'un',
     min_stock: 0,
+    supplier_id: '',
   });
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -96,10 +105,11 @@ export default function Inventory() {
 
   const fetchData = async () => {
     try {
-      const [categoriesRes, itemsRes, profilesRes] = await Promise.all([
+      const [categoriesRes, itemsRes, profilesRes, suppliersRes] = await Promise.all([
         supabase.from('categories').select('*').order('name'),
         supabase.from('items').select('*').order('name'),
         supabase.from('profiles').select('*'),
+        supabase.from('suppliers').select('*').order('name'),
       ]);
 
       if (categoriesRes.error) throw categoriesRes.error;
@@ -108,6 +118,7 @@ export default function Inventory() {
       setCategories(categoriesRes.data || []);
       setItems(itemsRes.data || []);
       setProfiles(profilesRes.data || []);
+      setSuppliers(suppliersRes.data || []);
       
       // Expand all categories by default
       setExpandedCategories(new Set((categoriesRes.data || []).map(c => c.id)));
@@ -211,13 +222,14 @@ export default function Inventory() {
         category_id: newItem.category_id,
         unit: newItem.unit,
         min_stock: newItem.min_stock,
+        supplier_id: newItem.supplier_id || null,
         created_by: user?.id,
       });
 
       if (error) throw error;
 
       toast({ title: 'Item criado com sucesso!' });
-      setNewItem({ name: '', category_id: '', unit: 'un', min_stock: 0 });
+      setNewItem({ name: '', category_id: '', unit: 'un', min_stock: 0, supplier_id: '' });
       setItemModalOpen(false);
       fetchData();
     } catch (error) {
@@ -239,13 +251,14 @@ export default function Inventory() {
           name: newItem.name.trim(),
           unit: newItem.unit,
           min_stock: newItem.min_stock,
+          supplier_id: newItem.supplier_id || null,
         })
         .eq('id', editingItem.id);
 
       if (error) throw error;
 
       toast({ title: 'Item atualizado!' });
-      setNewItem({ name: '', category_id: '', unit: 'un', min_stock: 0 });
+      setNewItem({ name: '', category_id: '', unit: 'un', min_stock: 0, supplier_id: '' });
       setEditingItem(null);
       setItemModalOpen(false);
       fetchData();
@@ -256,6 +269,12 @@ export default function Inventory() {
         variant: 'destructive',
       });
     }
+  };
+
+  const getSupplierName = (supplierId: string | null) => {
+    if (!supplierId) return '-';
+    const supplier = suppliers.find((s) => s.id === supplierId);
+    return supplier?.name || '-';
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -312,13 +331,14 @@ export default function Inventory() {
       category_id: item.category_id,
       unit: item.unit,
       min_stock: item.min_stock,
+      supplier_id: item.supplier_id || '',
     });
     setItemModalOpen(true);
   };
 
   const openAddItem = (categoryId: string) => {
     setEditingItem(null);
-    setNewItem({ name: '', category_id: categoryId, unit: 'un', min_stock: 0 });
+    setNewItem({ name: '', category_id: categoryId, unit: 'un', min_stock: 0, supplier_id: '' });
     setItemModalOpen(true);
   };
 
@@ -445,6 +465,29 @@ export default function Inventory() {
                   />
                 </div>
               </div>
+              {suppliers.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Fornecedor</Label>
+                  <Select
+                    value={newItem.supplier_id}
+                    onValueChange={(value) =>
+                      setNewItem({ ...newItem, supplier_id: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um fornecedor (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum</SelectItem>
+                      {suppliers.map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Button
                 className="w-full"
                 onClick={editingItem ? handleUpdateItem : handleCreateItem}
@@ -550,6 +593,7 @@ export default function Inventory() {
                             <TableHeader>
                               <TableRow className="bg-table-header">
                                 <TableHead className="font-semibold">Produto</TableHead>
+                                <TableHead className="font-semibold">Fornecedor</TableHead>
                                 <TableHead className="font-semibold">Unidade</TableHead>
                                 <TableHead className="font-semibold">Est. Mínimo</TableHead>
                                 <TableHead className="font-semibold">Qtd Atual</TableHead>
@@ -569,6 +613,7 @@ export default function Inventory() {
                                   )}
                                 >
                                   <TableCell className="font-medium whitespace-nowrap">{item.name}</TableCell>
+                                  <TableCell className="text-muted-foreground">{getSupplierName(item.supplier_id)}</TableCell>
                                   <TableCell>{item.unit}</TableCell>
                                   <TableCell>{item.min_stock}</TableCell>
                                   <TableCell className={cn('font-medium', getStockCellClassName(item))}>

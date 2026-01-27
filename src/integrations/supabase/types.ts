@@ -112,6 +112,33 @@ export type Database = {
           },
         ]
       }
+      dishes: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       items: {
         Row: {
           category_id: string
@@ -124,6 +151,7 @@ export type Database = {
           last_counted_by: string | null
           min_stock: number | null
           name: string
+          supplier_id: string | null
           unit: string
           updated_at: string | null
         }
@@ -138,6 +166,7 @@ export type Database = {
           last_counted_by?: string | null
           min_stock?: number | null
           name: string
+          supplier_id?: string | null
           unit?: string
           updated_at?: string | null
         }
@@ -152,6 +181,7 @@ export type Database = {
           last_counted_by?: string | null
           min_stock?: number | null
           name?: string
+          supplier_id?: string | null
           unit?: string
           updated_at?: string | null
         }
@@ -161,6 +191,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -232,6 +269,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "stock_history_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          name: string
+          updated_at: string | null
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string | null
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      technical_sheets: {
+        Row: {
+          created_at: string | null
+          dish_id: string
+          id: string
+          item_id: string
+          quantity_per_sale: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dish_id: string
+          id?: string
+          item_id: string
+          quantity_per_sale?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dish_id?: string
+          id?: string
+          item_id?: string
+          quantity_per_sale?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technical_sheets_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technical_sheets_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "items"
