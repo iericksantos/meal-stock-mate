@@ -116,21 +116,41 @@ export default function ShoppingList() {
   const getFormattedList = () => {
     const dateStr = format(new Date(), 'dd/MM/yyyy');
     let text = `*${t('shopping.title').toUpperCase()} - ${dateStr}*\n`;
-    text += '-'.repeat(26) + '\n';
 
-    items.forEach((item) => {
-      let reason = '';
-      if (item.isExpired) {
-        reason = t('shopping.tag_expired');
-      } else if (item.isExpiringSoon) {
-        reason = t('shopping.tag_expiring_soon');
-      } else {
-        reason = t('shopping.tag_below_min');
-      }
-      text += `${item.name} - ${t('shopping.reason')}: ${reason} - ${t('shopping.suggestion')}: ${item.suggestedQty} ${item.unit}.\n`;
-    });
+    // Group items by category
+    const belowMinItems = items.filter(item => item.isBelowMin && !item.isExpired && !item.isExpiringSoon);
+    const expiringSoonItems = items.filter(item => item.isExpiringSoon);
+    const expiredItems = items.filter(item => item.isExpired);
 
-    text += '-'.repeat(26);
+    // Below Minimum section
+    if (belowMinItems.length > 0) {
+      text += `-----------${t('shopping.tag_below_min')}---------------\n`;
+      belowMinItems.forEach((item) => {
+        text += `${item.name} - ${item.suggestedQty} ${item.unit}\n`;
+      });
+    }
+
+    // Expiring Soon section
+    if (expiringSoonItems.length > 0) {
+      text += `-----------${t('shopping.tag_expiring_soon')}---------------\n`;
+      expiringSoonItems.forEach((item) => {
+        text += `${item.name} - ${item.suggestedQty} ${item.unit}\n`;
+      });
+    }
+
+    // Expired section
+    if (expiredItems.length > 0) {
+      text += `-------------${t('shopping.tag_expired')}-------------\n`;
+      expiredItems.forEach((item) => {
+        text += `${item.name} - ${item.suggestedQty} ${item.unit}\n`;
+      });
+    }
+
+    // If list is empty
+    if (items.length === 0) {
+      text += `\n${t('shopping.no_items_pending')}\n`;
+    }
+
     return text;
   };
 
@@ -156,13 +176,44 @@ export default function ShoppingList() {
   };
 
   const handlePrint = () => {
-    const printContent = document.getElementById('shopping-list-print');
-    if (!printContent) return;
-
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
     const dateStr = format(new Date(), 'dd/MM/yyyy');
+
+    // Group items by category
+    const belowMinItems = items.filter(item => item.isBelowMin && !item.isExpired && !item.isExpiringSoon);
+    const expiringSoonItems = items.filter(item => item.isExpiringSoon);
+    const expiredItems = items.filter(item => item.isExpired);
+
+    const generateTableRows = (itemList: ShoppingItem[]) => {
+      return itemList.map(item => `
+        <tr>
+          <td>${item.name}</td>
+          <td><strong>${item.suggestedQty} ${item.unit}</strong></td>
+        </tr>
+      `).join('');
+    };
+
+    const generateSection = (title: string, itemList: ShoppingItem[], tagClass: string) => {
+      if (itemList.length === 0) return '';
+      return `
+        <div class="section">
+          <h2><span class="tag ${tagClass}">${title}</span></h2>
+          <table>
+            <thead>
+              <tr>
+                <th>${t('table.product')}</th>
+                <th>${t('shopping.quantity')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${generateTableRows(itemList)}
+            </tbody>
+          </table>
+        </div>
+      `;
+    };
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -182,6 +233,13 @@ export default function ShoppingList() {
               padding-bottom: 10px;
               margin-bottom: 20px;
             }
+            .section {
+              margin-bottom: 24px;
+            }
+            .section h2 {
+              font-size: 14px;
+              margin-bottom: 12px;
+            }
             table {
               width: 100%;
               border-collapse: collapse;
@@ -197,7 +255,7 @@ export default function ShoppingList() {
             }
             .tag {
               display: inline-block;
-              padding: 2px 8px;
+              padding: 4px 12px;
               border-radius: 4px;
               font-size: 12px;
               font-weight: bold;
@@ -214,6 +272,11 @@ export default function ShoppingList() {
               background-color: #dc2626;
               color: white;
             }
+            .empty-message {
+              text-align: center;
+              padding: 40px;
+              color: #666;
+            }
             @media print {
               body { padding: 0; }
             }
@@ -221,30 +284,14 @@ export default function ShoppingList() {
         </head>
         <body>
           <h1>${t('shopping.title').toUpperCase()} - ${dateStr}</h1>
-          <table>
-            <thead>
-              <tr>
-                <th>${t('table.product')}</th>
-                <th>${t('shopping.reason')}</th>
-                <th>${t('shopping.current_qty')}</th>
-                <th>${t('shopping.suggestion')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map(item => `
-                <tr>
-                  <td>${item.name}</td>
-                  <td>
-                    ${item.isExpired ? `<span class="tag tag-expired">${t('shopping.tag_expired')}</span>` : ''}
-                    ${item.isExpiringSoon ? `<span class="tag tag-expiring">${t('shopping.tag_expiring_soon')}</span>` : ''}
-                    ${item.isBelowMin ? `<span class="tag tag-below">${t('shopping.tag_below_min')}</span>` : ''}
-                  </td>
-                  <td>${item.current_stock} ${item.unit}</td>
-                  <td><strong>${item.suggestedQty} ${item.unit}</strong></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          ${items.length === 0 
+            ? `<div class="empty-message">${t('shopping.no_items_pending')}</div>`
+            : `
+              ${generateSection(t('shopping.tag_below_min'), belowMinItems, 'tag-below')}
+              ${generateSection(t('shopping.tag_expiring_soon'), expiringSoonItems, 'tag-expiring')}
+              ${generateSection(t('shopping.tag_expired'), expiredItems, 'tag-expired')}
+            `
+          }
         </body>
       </html>
     `);

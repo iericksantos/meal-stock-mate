@@ -245,6 +245,8 @@ const translations: Record<Language, Record<string, string>> = {
     'shopping.copied_desc': 'Lista copiada para a área de transferência.',
     'shopping.copy_error': 'Erro ao copiar a lista.',
     'shopping.current_qty': 'Qtd Atual',
+    'shopping.quantity': 'Quantidade',
+    'shopping.no_items_pending': 'Nenhum item pendente para compra',
   },
   'es': {
     // Auth
@@ -482,6 +484,8 @@ const translations: Record<Language, Record<string, string>> = {
     'shopping.copied_desc': 'Lista copiada al portapapeles.',
     'shopping.copy_error': 'Error al copiar la lista.',
     'shopping.current_qty': 'Cant. Actual',
+    'shopping.quantity': 'Cantidad',
+    'shopping.no_items_pending': 'Ningún artículo pendiente de compra',
   },
   'en': {
     // Auth
@@ -719,6 +723,8 @@ const translations: Record<Language, Record<string, string>> = {
     'shopping.copied_desc': 'List copied to clipboard.',
     'shopping.copy_error': 'Error copying the list.',
     'shopping.current_qty': 'Current Qty',
+    'shopping.quantity': 'Quantity',
+    'shopping.no_items_pending': 'No items pending for purchase',
   },
 };
 
