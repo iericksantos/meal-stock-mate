@@ -568,7 +568,7 @@ export default function Inventory() {
                                     index % 2 === 1 && !getRowClassName(item) && 'bg-table-row-alt'
                                   )}
                                 >
-                                  <TableCell className="font-medium">{item.name}</TableCell>
+                                  <TableCell className="font-medium whitespace-nowrap">{item.name}</TableCell>
                                   <TableCell>{item.unit}</TableCell>
                                   <TableCell>{item.min_stock}</TableCell>
                                   <TableCell className={cn('font-medium', getStockCellClassName(item))}>
