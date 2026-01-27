@@ -23,37 +23,37 @@ const navItems = [
     titleKey: 'nav.dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['admin', 'staff'],
+    roles: ['host', 'admin', 'staff'],
   },
   {
     titleKey: 'nav.inventory',
     href: '/inventory',
     icon: Package,
-    roles: ['admin'],
+    roles: ['host', 'admin'],
   },
   {
     titleKey: 'nav.stock_entry',
     href: '/stock-entry',
     icon: ClipboardList,
-    roles: ['admin', 'staff'],
+    roles: ['host', 'admin', 'staff'],
   },
   {
     titleKey: 'nav.audit_history',
     href: '/audit-history',
     icon: FileText,
-    roles: ['admin'],
+    roles: ['host', 'admin'],
   },
   {
     titleKey: 'nav.users',
     href: '/users',
     icon: Users,
-    roles: ['admin'],
+    roles: ['host', 'admin'],
   },
   {
     titleKey: 'nav.settings',
     href: '/settings',
     icon: Settings,
-    roles: ['admin', 'staff'],
+    roles: ['host', 'admin', 'staff'],
   },
 ];
 
