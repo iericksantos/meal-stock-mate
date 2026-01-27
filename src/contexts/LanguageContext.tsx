@@ -146,6 +146,12 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.theme_desc': 'Escolha entre modo claro ou escuro',
     'settings.light': 'Claro',
     'settings.dark': 'Escuro',
+    'settings.session': 'Sessão',
+    'settings.session_desc': 'Gerencie sua sessão atual',
+    'settings.logout': 'Sair da Conta',
+    'settings.logout_desc': 'Encerrar a sessão e voltar à tela de login',
+    'settings.logout_confirm': 'Deseja realmente encerrar a sessão?',
+    'settings.logout_confirm_title': 'Encerrar Sessão',
 
     // Table headers
     'table.product': 'Produto',
@@ -385,6 +391,12 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.theme_desc': 'Elija entre modo claro u oscuro',
     'settings.light': 'Claro',
     'settings.dark': 'Oscuro',
+    'settings.session': 'Sesión',
+    'settings.session_desc': 'Gestione su sesión actual',
+    'settings.logout': 'Cerrar Sesión',
+    'settings.logout_desc': 'Finalizar la sesión y volver al inicio de sesión',
+    'settings.logout_confirm': '¿Realmente desea cerrar la sesión?',
+    'settings.logout_confirm_title': 'Cerrar Sesión',
 
     // Table headers
     'table.product': 'Producto',
@@ -624,6 +636,12 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.theme_desc': 'Choose between light or dark mode',
     'settings.light': 'Light',
     'settings.dark': 'Dark',
+    'settings.session': 'Session',
+    'settings.session_desc': 'Manage your current session',
+    'settings.logout': 'Sign Out',
+    'settings.logout_desc': 'End the session and return to login',
+    'settings.logout_confirm': 'Are you sure you want to sign out?',
+    'settings.logout_confirm_title': 'Sign Out',
 
     // Table headers
     'table.product': 'Product',
