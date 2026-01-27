@@ -12,6 +12,7 @@ import {
   Menu,
   Settings,
   FileText,
+  ShoppingCart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -35,6 +36,12 @@ const navItems = [
     titleKey: 'nav.stock_entry',
     href: '/stock-entry',
     icon: ClipboardList,
+    roles: ['host', 'admin', 'staff'],
+  },
+  {
+    titleKey: 'nav.shopping_list',
+    href: '/shopping-list',
+    icon: ShoppingCart,
     roles: ['host', 'admin', 'staff'],
   },
   {
