@@ -7,9 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Copy, MessageCircle, Printer, ShoppingCart, ArrowLeft, Pencil } from 'lucide-react';
+import { Copy, MessageCircle, Printer, ShoppingCart, ArrowLeft, Pencil, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+
+interface Supplier {
+  id: string;
+  name: string;
+  whatsapp: string;
+}
 
 interface ShoppingItem {
   id: string;
@@ -22,6 +28,7 @@ interface ShoppingItem {
   isExpiringSoon: boolean;
   isBelowMin: boolean;
   suggestedQty: number;
+  supplier_id: string | null;
 }
 
 export default function ShoppingList() {
@@ -29,14 +36,19 @@ export default function ShoppingList() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchItems = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase.from('items').select('*');
-        if (error) throw error;
+        const [itemsRes, suppliersRes] = await Promise.all([
+          supabase.from('items').select('*'),
+          supabase.from('suppliers').select('*').order('name'),
+        ]);
+
+        if (itemsRes.error) throw itemsRes.error;
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -44,7 +56,7 @@ export default function ShoppingList() {
         const problemItems: ShoppingItem[] = [];
         const initialQuantities: Record<string, number> = {};
 
-        data?.forEach((item) => {
+        itemsRes.data?.forEach((item) => {
           let isExpired = false;
           let isExpiringSoon = false;
           
@@ -89,6 +101,7 @@ export default function ShoppingList() {
               isExpiringSoon,
               isBelowMin,
               suggestedQty: finalQty,
+              supplier_id: item.supplier_id,
             });
 
             initialQuantities[item.id] = finalQty;
@@ -104,6 +117,7 @@ export default function ShoppingList() {
         });
 
         setItems(problemItems);
+        setSuppliers(suppliersRes.data || []);
         setEditedQuantities(initialQuantities);
       } catch (error) {
         console.error('Error fetching items:', error);
@@ -112,7 +126,7 @@ export default function ShoppingList() {
       }
     };
 
-    fetchItems();
+    fetchData();
   }, []);
 
   const handleQuantityChange = (itemId: string, value: string) => {
@@ -127,13 +141,39 @@ export default function ShoppingList() {
     return editedQuantities[itemId] ?? 0;
   };
 
-  const getFormattedList = () => {
+  const getSupplierName = (supplierId: string | null) => {
+    if (!supplierId) return t('shopping.no_supplier');
+    const supplier = suppliers.find(s => s.id === supplierId);
+    return supplier?.name || t('shopping.no_supplier');
+  };
+
+  const getSupplierWhatsApp = (supplierId: string) => {
+    const supplier = suppliers.find(s => s.id === supplierId);
+    return supplier?.whatsapp || '';
+  };
+
+  // Group items by supplier
+  const getItemsBySupplier = () => {
+    const grouped: Record<string, ShoppingItem[]> = {};
+    
+    items.forEach(item => {
+      const key = item.supplier_id || 'no_supplier';
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+      grouped[key].push(item);
+    });
+
+    return grouped;
+  };
+
+  const getFormattedListForSupplier = (supplierItems: ShoppingItem[]) => {
     const dateStr = format(new Date(), 'dd/MM/yyyy');
     let text = `*${t('shopping.title').toUpperCase()} - ${dateStr}*\n`;
 
-    const belowMinItems = items.filter(item => item.isBelowMin && !item.isExpired && !item.isExpiringSoon);
-    const expiringSoonItems = items.filter(item => item.isExpiringSoon);
-    const expiredItems = items.filter(item => item.isExpired);
+    const belowMinItems = supplierItems.filter(item => item.isBelowMin && !item.isExpired && !item.isExpiringSoon);
+    const expiringSoonItems = supplierItems.filter(item => item.isExpiringSoon);
+    const expiredItems = supplierItems.filter(item => item.isExpired);
 
     if (belowMinItems.length > 0) {
       text += `-----------${t('shopping.tag_below_min')}---------------\n`;
@@ -159,11 +199,11 @@ export default function ShoppingList() {
       });
     }
 
-    if (items.length === 0) {
-      text += `\n${t('shopping.no_items_pending')}\n`;
-    }
-
     return text;
+  };
+
+  const getFormattedList = () => {
+    return getFormattedListForSupplier(items);
   };
 
   const handleCopy = async () => {
@@ -188,6 +228,14 @@ export default function ShoppingList() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleWhatsAppSupplier = (supplierId: string, supplierItems: ShoppingItem[]) => {
+    const whatsapp = getSupplierWhatsApp(supplierId);
+    const phoneDigits = whatsapp.replace(/\D/g, '');
+    const message = encodeURIComponent(getFormattedListForSupplier(supplierItems));
+    const url = `https://api.whatsapp.com/send?phone=${phoneDigits}&text=${message}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -205,6 +253,7 @@ export default function ShoppingList() {
         return `
           <tr>
             <td>${item.name}</td>
+            <td>${getSupplierName(item.supplier_id)}</td>
             <td><strong>${qty} ${item.unit}</strong></td>
           </tr>
         `;
@@ -220,6 +269,7 @@ export default function ShoppingList() {
             <thead>
               <tr>
                 <th>${t('table.product')}</th>
+                <th>${t('shopping.supplier')}</th>
                 <th>${t('shopping.quantity')}</th>
               </tr>
             </thead>
@@ -320,6 +370,9 @@ export default function ShoppingList() {
     }, 250);
   };
 
+  const itemsBySupplier = getItemsBySupplier();
+  const supplierIds = Object.keys(itemsBySupplier);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -390,74 +443,101 @@ export default function ShoppingList() {
           </div>
         </div>
 
-        {/* Items List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>{t('shopping.items_needing_attention')}</span>
-              <Badge variant="secondary">{items.length} {items.length === 1 ? 'item' : 'itens'}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <p className="text-muted-foreground">{t('common.loading')}</p>
-              </div>
-            ) : items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <ShoppingCart className="h-12 w-12 text-success mb-4" />
-                <h3 className="text-lg font-medium">{t('shopping.all_good')}</h3>
-                <p className="text-muted-foreground mt-1">{t('shopping.no_items_desc')}</p>
-              </div>
-            ) : (
-              <div id="shopping-list-print" className="space-y-3">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-medium">{item.name}</h3>
-                        {item.isExpired && (
-                          <Badge className="bg-expired text-expired-foreground">
-                            {t('shopping.tag_expired')}
-                          </Badge>
-                        )}
-                        {item.isExpiringSoon && (
-                          <Badge className="bg-expiring text-expiring-foreground">
-                            {t('shopping.tag_expiring_soon')}
-                          </Badge>
-                        )}
-                        {item.isBelowMin && (
-                          <Badge variant="destructive">
-                            {t('shopping.tag_below_min')}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {t('shopping.current')}: {item.current_stock} {item.unit} | 
-                        {t('shopping.minimum')}: {item.min_stock} {item.unit}
-                      </p>
+        {/* Items List Grouped by Supplier */}
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-muted-foreground">{t('common.loading')}</p>
+          </div>
+        ) : items.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <ShoppingCart className="h-12 w-12 text-success mb-4" />
+              <h3 className="text-lg font-medium">{t('shopping.all_good')}</h3>
+              <p className="text-muted-foreground mt-1">{t('shopping.no_items_desc')}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {supplierIds.map((supplierId) => {
+              const supplierItems = itemsBySupplier[supplierId];
+              const supplierName = supplierId === 'no_supplier' 
+                ? t('shopping.no_supplier') 
+                : getSupplierName(supplierId);
+              const hasValidSupplier = supplierId !== 'no_supplier';
+
+              return (
+                <Card key={supplierId}>
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Truck className="h-5 w-5 text-primary" />
+                        {supplierName}
+                        <Badge variant="secondary">{supplierItems.length} {supplierItems.length === 1 ? 'item' : 'itens'}</Badge>
+                      </CardTitle>
+                      {hasValidSupplier && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleWhatsAppSupplier(supplierId, supplierItems)}
+                          className="bg-success hover:bg-success/90 text-success-foreground"
+                        >
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          {t('shopping.send_order')}
+                        </Button>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg border-2 border-dashed border-primary/30">
-                      <Pencil className="h-4 w-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">{t('shopping.quantity')}:</span>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={getItemQuantity(item.id)}
-                        onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                        className="w-20 h-8 text-center font-bold text-primary border-primary/50 focus:border-primary"
-                      />
-                      <span className="text-sm font-medium">{item.unit}</span>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {supplierItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-medium">{item.name}</h3>
+                              {item.isExpired && (
+                                <Badge className="bg-expired text-expired-foreground">
+                                  {t('shopping.tag_expired')}
+                                </Badge>
+                              )}
+                              {item.isExpiringSoon && (
+                                <Badge className="bg-expiring text-expiring-foreground">
+                                  {t('shopping.tag_expiring_soon')}
+                                </Badge>
+                              )}
+                              {item.isBelowMin && (
+                                <Badge variant="destructive">
+                                  {t('shopping.tag_below_min')}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {t('shopping.current')}: {item.current_stock} {item.unit} | 
+                              {t('shopping.minimum')}: {item.min_stock} {item.unit}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg border-2 border-dashed border-primary/30">
+                            <Pencil className="h-4 w-4 text-primary" />
+                            <span className="text-sm text-muted-foreground">{t('shopping.quantity')}:</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={getItemQuantity(item.id)}
+                              onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                              className="w-20 h-8 text-center font-bold text-primary border-primary/50 focus:border-primary"
+                            />
+                            <span className="text-sm font-medium">{item.unit}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
