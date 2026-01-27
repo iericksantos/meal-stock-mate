@@ -266,7 +266,7 @@ export default function AuditHistory() {
                         <TableCell className="font-medium">
                           {entry.user_email}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {entry.item_name}
                         </TableCell>
                         <TableCell>
