@@ -159,6 +159,12 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // Also update email in profiles table for audit display
+      await supabaseAdmin
+        .from("profiles")
+        .update({ email })
+        .eq("user_id", user_id);
     }
 
     // Update password if provided

@@ -1,5 +1,8 @@
 project_id = "fregellfimdkphopzuce"
 
+[functions.sync-profile-emails]
+verify_jwt = false
+
 [functions.create-user]
 verify_jwt = false
 
