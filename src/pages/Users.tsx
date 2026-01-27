@@ -128,31 +128,33 @@ export default function Users() {
     setCreating(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
+      // Call edge function to create user (keeps admin logged in)
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUser.email,
+          password: newUser.password,
+          full_name: newUser.full_name,
+          role: newUser.role,
         },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('User not created');
+      if (error) {
+        throw new Error(error.message || 'Failed to create user');
+      }
 
-      const { error: profileError } = await supabase.from('profiles').insert({
-        user_id: authData.user.id,
-        full_name: newUser.full_name,
-      });
+      if (data?.error) {
+        // Handle specific error codes from the edge function
+        if (data.error === 'email_exists') {
+          toast({
+            title: t('users.email_exists'),
+            variant: 'destructive',
+          });
+          return;
+        }
+        throw new Error(data.message || data.error);
+      }
 
-      if (profileError) throw profileError;
-
-      const { error: roleError } = await supabase.from('user_roles').insert({
-        user_id: authData.user.id,
-        role: newUser.role,
-      });
-
-      if (roleError) throw roleError;
-
+      // Success - clear form and refresh list
       toast({ title: t('users.created_success') });
       setNewUser({ email: '', password: '', full_name: '', role: 'staff' });
       setModalOpen(false);
@@ -160,18 +162,11 @@ export default function Users() {
     } catch (error: unknown) {
       console.error('Error creating user:', error);
       const message = error instanceof Error ? error.message : '';
-      if (message.includes('already registered')) {
-        toast({
-          title: t('users.email_exists'),
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: t('users.create_error'),
-          description: message,
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: t('users.create_error'),
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
       setCreating(false);
     }
