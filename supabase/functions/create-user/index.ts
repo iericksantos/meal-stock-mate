@@ -145,10 +145,11 @@ serve(async (req) => {
       );
     }
 
-    // Create profile
+    // Create profile with email
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       user_id: authData.user.id,
       full_name,
+      email,
     });
 
     if (profileError) {
