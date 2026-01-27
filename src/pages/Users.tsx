@@ -94,7 +94,7 @@ export default function Users() {
         const profile = profiles?.find((p) => p.user_id === role.user_id);
         return {
           id: role.user_id,
-          email: profile?.full_name || 'Sem email',
+          email: profile?.email || 'Sem email',
           created_at: profile?.created_at || new Date().toISOString(),
           role: role.role as AppRole,
           full_name: profile?.full_name || 'Sem nome',
