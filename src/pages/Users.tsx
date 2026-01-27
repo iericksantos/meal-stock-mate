@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import EditUserModal from '@/components/EditUserModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,32 +32,36 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Users as UsersIcon, Trash2, Shield, User } from 'lucide-react';
+import { UserPlus, Users as UsersIcon, Trash2, Shield, User, Crown, Pencil } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR, es, enUS } from 'date-fns/locale';
+
+type AppRole = 'host' | 'admin' | 'staff';
 
 interface UserWithRole {
   id: string;
   email: string;
   created_at: string;
-  role: 'admin' | 'staff';
+  role: AppRole;
   full_name: string;
 }
 
 export default function Users() {
-  const { user } = useAuth();
+  const { user, role: currentUserRole, isHost } = useAuth();
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<UserWithRole | null>(null);
 
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
     full_name: '',
-    role: 'staff' as 'admin' | 'staff',
+    role: 'staff' as AppRole,
   });
 
   const getDateLocale = () => {
@@ -91,7 +96,7 @@ export default function Users() {
           id: role.user_id,
           email: profile?.full_name || 'Sem email',
           created_at: profile?.created_at || new Date().toISOString(),
-          role: role.role as 'admin' | 'staff',
+          role: role.role as AppRole,
           full_name: profile?.full_name || 'Sem nome',
         };
       });
@@ -106,6 +111,25 @@ export default function Users() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get available roles based on current user's role
+  const getAvailableRolesForCreation = (): AppRole[] => {
+    if (currentUserRole === 'host') {
+      return ['host', 'admin', 'staff'];
+    }
+    if (currentUserRole === 'admin') {
+      return ['staff'];
+    }
+    return [];
+  };
+
+  // Check if current user can manage target user
+  const canManageUser = (targetRole: AppRole, targetId: string): boolean => {
+    if (targetId === user?.id) return false; // Can't manage yourself
+    if (currentUserRole === 'host') return true; // Host can manage everyone
+    if (currentUserRole === 'admin' && targetRole === 'staff') return true; // Admin can manage staff
+    return false;
   };
 
   const handleCreateUser = async () => {
@@ -128,7 +152,6 @@ export default function Users() {
     setCreating(true);
 
     try {
-      // Call edge function to create user (keeps admin logged in)
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: newUser.email,
@@ -143,7 +166,6 @@ export default function Users() {
       }
 
       if (data?.error) {
-        // Handle specific error codes from the edge function
         if (data.error === 'email_exists') {
           toast({
             title: t('users.email_exists'),
@@ -151,10 +173,16 @@ export default function Users() {
           });
           return;
         }
+        if (data.error === 'permission_denied') {
+          toast({
+            title: t('users.permission_denied'),
+            variant: 'destructive',
+          });
+          return;
+        }
         throw new Error(data.message || data.error);
       }
 
-      // Success - clear form and refresh list
       toast({ title: t('users.created_success') });
       setNewUser({ email: '', password: '', full_name: '', role: 'staff' });
       setModalOpen(false);
@@ -172,10 +200,18 @@ export default function Users() {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = async (userId: string, targetRole: AppRole) => {
     if (userId === user?.id) {
       toast({
         title: t('users.delete_self_error'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!canManageUser(targetRole, userId)) {
+      toast({
+        title: t('users.permission_denied'),
         variant: 'destructive',
       });
       return;
@@ -208,6 +244,35 @@ export default function Users() {
       });
     }
   };
+
+  const handleEditClick = (userToEdit: UserWithRole) => {
+    setUserToEdit(userToEdit);
+    setEditModalOpen(true);
+  };
+
+  const getRoleBadgeVariant = (role: AppRole) => {
+    switch (role) {
+      case 'host':
+        return 'default';
+      case 'admin':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getRoleIcon = (role: AppRole) => {
+    switch (role) {
+      case 'host':
+        return <Crown className="mr-1 h-3 w-3" />;
+      case 'admin':
+        return <Shield className="mr-1 h-3 w-3" />;
+      default:
+        return <User className="mr-1 h-3 w-3" />;
+    }
+  };
+
+  const availableRoles = getAvailableRolesForCreation();
 
   return (
     <DashboardLayout requireAdmin>
@@ -271,7 +336,7 @@ export default function Users() {
                   <Label>{t('users.user_type')}</Label>
                   <Select
                     value={newUser.role}
-                    onValueChange={(value: 'admin' | 'staff') =>
+                    onValueChange={(value: AppRole) =>
                       setNewUser({ ...newUser, role: value })
                     }
                   >
@@ -285,12 +350,22 @@ export default function Users() {
                           {t('users.staff_desc')}
                         </div>
                       </SelectItem>
-                      <SelectItem value="admin">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          {t('users.admin_desc')}
-                        </div>
-                      </SelectItem>
+                      {availableRoles.includes('admin') && (
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            {t('users.admin_desc')}
+                          </div>
+                        </SelectItem>
+                      )}
+                      {availableRoles.includes('host') && (
+                        <SelectItem value="host">
+                          <div className="flex items-center gap-2">
+                            <Crown className="h-4 w-4 text-host" />
+                            {t('users.host_desc')}
+                          </div>
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -336,58 +411,75 @@ export default function Users() {
                       <TableHead className="font-semibold">{t('table.name')}</TableHead>
                       <TableHead className="font-semibold">{t('table.type')}</TableHead>
                       <TableHead className="font-semibold">{t('users.registered_at')}</TableHead>
-                      <TableHead className="w-[80px]"></TableHead>
+                      <TableHead className="w-[120px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((u, index) => (
-                      <TableRow
-                        key={u.id}
-                        className={index % 2 === 1 ? 'bg-table-row-alt' : ''}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium uppercase text-primary">
-                              {u.full_name.charAt(0)}
+                    {users.map((u, index) => {
+                      const canManage = canManageUser(u.role, u.id);
+                      const isHostUser = u.role === 'host';
+                      
+                      return (
+                        <TableRow
+                          key={u.id}
+                          className={index % 2 === 1 ? 'bg-table-row-alt' : ''}
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium uppercase ${
+                                isHostUser 
+                                  ? 'bg-host-light text-host ring-2 ring-host/50' 
+                                  : 'bg-primary/10 text-primary'
+                              }`}>
+                                {u.full_name.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-medium">{u.full_name}</p>
+                                {u.id === user?.id && (
+                                  <span className="text-xs text-muted-foreground">{t('users.you')}</span>
+                                )}
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium">{u.full_name}</p>
-                              {u.id === user?.id && (
-                                <span className="text-xs text-muted-foreground">{t('users.you')}</span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={getRoleBadgeVariant(u.role)}
+                              className={isHostUser ? 'bg-host-light text-host-foreground border-host/50 hover:bg-host-light' : ''}
+                            >
+                              {getRoleIcon(u.role)}
+                              {t(`common.${u.role}`)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {format(parseISO(u.created_at), "dd 'de' MMMM 'de' yyyy", {
+                              locale: getDateLocale(),
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {canManage && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleEditClick(u)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteUser(u.id, u.role)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </>
                               )}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={u.role === 'admin' ? 'default' : 'secondary'}
-                          >
-                            {u.role === 'admin' ? (
-                              <Shield className="mr-1 h-3 w-3" />
-                            ) : (
-                              <User className="mr-1 h-3 w-3" />
-                            )}
-                            {t(`common.${u.role}`)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {format(parseISO(u.created_at), "dd 'de' MMMM 'de' yyyy", {
-                            locale: getDateLocale(),
-                          })}
-                        </TableCell>
-                        <TableCell>
-                          {u.id !== user?.id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteUser(u.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -395,6 +487,15 @@ export default function Users() {
           </Card>
         )}
       </div>
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        user={userToEdit}
+        currentUserRole={currentUserRole}
+        onSuccess={fetchUsers}
+      />
     </DashboardLayout>
   );
 }

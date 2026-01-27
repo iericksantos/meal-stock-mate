@@ -61,6 +61,11 @@ export default {
           DEFAULT: "hsl(var(--danger))",
           light: "hsl(var(--danger-light))",
         },
+        host: {
+          DEFAULT: "hsl(var(--host))",
+          foreground: "hsl(var(--host-foreground))",
+          light: "hsl(var(--host-light))",
+        },
         table: {
           header: "hsl(var(--table-header))",
           "row-alt": "hsl(var(--table-row-alt))",

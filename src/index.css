@@ -46,6 +46,11 @@
     --success-foreground: 0 0% 100%;
     --success-light: 142 76% 95%;
 
+    /* Host/Premium accent */
+    --host: 43 96% 56%;
+    --host-foreground: 43 96% 15%;
+    --host-light: 43 96% 90%;
+
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 217 91% 50%;
@@ -103,6 +108,11 @@
     --success: 142 76% 40%;
     --success-foreground: 0 0% 100%;
     --success-light: 142 50% 15%;
+
+    /* Host/Premium accent */
+    --host: 43 96% 56%;
+    --host-foreground: 43 96% 15%;
+    --host-light: 43 50% 20%;
 
     --border: 220 20% 25%;
     --input: 220 20% 25%;
