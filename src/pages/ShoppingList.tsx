@@ -19,6 +19,7 @@ interface ShoppingItem {
   min_stock: number;
   expiry_date: string | null;
   isExpired: boolean;
+  isExpiringSoon: boolean;
   isBelowMin: boolean;
   suggestedQty: number;
 }
@@ -42,19 +43,35 @@ export default function ShoppingList() {
         const problemItems: ShoppingItem[] = [];
 
         data?.forEach((item) => {
-          const isExpired = item.expiry_date 
-            ? new Date(item.expiry_date) < today 
-            : false;
+          let isExpired = false;
+          let isExpiringSoon = false;
+          
+          if (item.expiry_date) {
+            const expiryDate = new Date(item.expiry_date);
+            expiryDate.setHours(0, 0, 0, 0);
+            const diffTime = expiryDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+              isExpired = true;
+            } else if (diffDays >= 0 && diffDays <= 3) {
+              isExpiringSoon = true;
+            }
+          }
+          
           const isBelowMin = (item.current_stock || 0) < (item.min_stock || 0);
 
-          if (isExpired || isBelowMin) {
+          if (isExpired || isExpiringSoon || isBelowMin) {
             let suggestedQty = 0;
             
-            if (isBelowMin && isExpired) {
-              // Both expired and below min - suggest min_stock
+            if (isExpired) {
+              // Expired - suggest min_stock (need full replacement)
               suggestedQty = item.min_stock || 0;
-            } else if (isExpired) {
-              // Only expired - suggest min_stock
+            } else if (isExpiringSoon && isBelowMin) {
+              // Expiring soon and below min - suggest min_stock
+              suggestedQty = item.min_stock || 0;
+            } else if (isExpiringSoon) {
+              // Only expiring soon - suggest min_stock (will need replacement soon)
               suggestedQty = item.min_stock || 0;
             } else if (isBelowMin) {
               // Only below min - suggest difference
@@ -69,16 +86,19 @@ export default function ShoppingList() {
               min_stock: item.min_stock || 0,
               expiry_date: item.expiry_date,
               isExpired,
+              isExpiringSoon,
               isBelowMin,
               suggestedQty: Math.max(0, suggestedQty),
             });
           }
         });
 
-        // Sort: expired first, then by name
+        // Sort: expired first, then expiring soon, then below min, then by name
         problemItems.sort((a, b) => {
           if (a.isExpired && !b.isExpired) return -1;
           if (!a.isExpired && b.isExpired) return 1;
+          if (a.isExpiringSoon && !b.isExpiringSoon) return -1;
+          if (!a.isExpiringSoon && b.isExpiringSoon) return 1;
           return a.name.localeCompare(b.name);
         });
 
@@ -99,9 +119,14 @@ export default function ShoppingList() {
     text += '-'.repeat(26) + '\n';
 
     items.forEach((item) => {
-      const reason = item.isExpired 
-        ? t('shopping.tag_expired') 
-        : t('shopping.tag_below_min');
+      let reason = '';
+      if (item.isExpired) {
+        reason = t('shopping.tag_expired');
+      } else if (item.isExpiringSoon) {
+        reason = t('shopping.tag_expiring_soon');
+      } else {
+        reason = t('shopping.tag_below_min');
+      }
       text += `${item.name} - ${t('shopping.reason')}: ${reason} - ${t('shopping.suggestion')}: ${item.suggestedQty} ${item.unit}.\n`;
     });
 
@@ -181,6 +206,10 @@ export default function ShoppingList() {
               background-color: #7c3aed;
               color: white;
             }
+            .tag-expiring {
+              background-color: #f97316;
+              color: white;
+            }
             .tag-below {
               background-color: #dc2626;
               color: white;
@@ -207,6 +236,7 @@ export default function ShoppingList() {
                   <td>${item.name}</td>
                   <td>
                     ${item.isExpired ? `<span class="tag tag-expired">${t('shopping.tag_expired')}</span>` : ''}
+                    ${item.isExpiringSoon ? `<span class="tag tag-expiring">${t('shopping.tag_expiring_soon')}</span>` : ''}
                     ${item.isBelowMin ? `<span class="tag tag-below">${t('shopping.tag_below_min')}</span>` : ''}
                   </td>
                   <td>${item.current_stock} ${item.unit}</td>
@@ -288,6 +318,10 @@ export default function ShoppingList() {
             <span className="text-sm text-muted-foreground">{t('shopping.expired_desc')}</span>
           </div>
           <div className="flex items-center gap-2">
+            <Badge className="bg-expiring text-expiring-foreground">{t('shopping.tag_expiring_soon')}</Badge>
+            <span className="text-sm text-muted-foreground">{t('shopping.expiring_soon_desc')}</span>
+          </div>
+          <div className="flex items-center gap-2">
             <Badge variant="destructive">{t('shopping.tag_below_min')}</Badge>
             <span className="text-sm text-muted-foreground">{t('shopping.below_min_desc')}</span>
           </div>
@@ -325,6 +359,11 @@ export default function ShoppingList() {
                         {item.isExpired && (
                           <Badge className="bg-expired text-expired-foreground">
                             {t('shopping.tag_expired')}
+                          </Badge>
+                        )}
+                        {item.isExpiringSoon && (
+                          <Badge className="bg-expiring text-expiring-foreground">
+                            {t('shopping.tag_expiring_soon')}
                           </Badge>
                         )}
                         {item.isBelowMin && (

@@ -50,10 +50,11 @@ export default function Dashboard() {
           }
           if (item.expiry_date) {
             const expiryDate = parseISO(item.expiry_date);
+            expiryDate.setHours(0, 0, 0, 0);
             const daysUntilExpiry = differenceInDays(expiryDate, today);
             if (daysUntilExpiry < 0) {
               expired++;
-            } else if (daysUntilExpiry <= 1) {
+            } else if (daysUntilExpiry >= 0 && daysUntilExpiry <= 3) {
               expiringSoon++;
             }
           }
@@ -115,8 +116,8 @@ export default function Dashboard() {
       titleKey: 'dashboard.expiring_soon',
       value: stats.expiringSoon,
       icon: Clock,
-      color: 'text-destructive',
-      bgColor: 'bg-destructive/10',
+      color: 'text-expiring',
+      bgColor: 'bg-expiring/10',
       clickable: true,
       filter: 'expiring',
     },
@@ -196,7 +197,11 @@ export default function Dashboard() {
               <h3 className="font-medium">{t('dashboard.color_legend')}</h3>
               <div className="mt-3 space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded bg-danger-light border border-danger" />
+                  <div className="h-4 w-4 rounded bg-expired-light border border-expired" />
+                  <span className="text-sm">{t('dashboard.expired_legend')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded bg-expiring-light border border-expiring" />
                   <span className="text-sm">{t('dashboard.expiring_legend')}</span>
                 </div>
                 <div className="flex items-center gap-2">
