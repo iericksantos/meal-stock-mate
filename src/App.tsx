@@ -14,6 +14,7 @@ import StockEntry from "./pages/StockEntry";
 import AuditHistory from "./pages/AuditHistory";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
+import ShoppingList from "./pages/ShoppingList";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/audit-history" element={<AuditHistory />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/shopping-list" element={<ShoppingList />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AuthProvider>

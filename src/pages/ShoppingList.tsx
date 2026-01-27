@@ -1,0 +1,356 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Copy, MessageCircle, Printer, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+
+interface ShoppingItem {
+  id: string;
+  name: string;
+  unit: string;
+  current_stock: number;
+  min_stock: number;
+  expiry_date: string | null;
+  isExpired: boolean;
+  isBelowMin: boolean;
+  suggestedQty: number;
+}
+
+export default function ShoppingList() {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const { data, error } = await supabase.from('items').select('*');
+        if (error) throw error;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const problemItems: ShoppingItem[] = [];
+
+        data?.forEach((item) => {
+          const isExpired = item.expiry_date 
+            ? new Date(item.expiry_date) < today 
+            : false;
+          const isBelowMin = (item.current_stock || 0) < (item.min_stock || 0);
+
+          if (isExpired || isBelowMin) {
+            let suggestedQty = 0;
+            
+            if (isBelowMin && isExpired) {
+              // Both expired and below min - suggest min_stock
+              suggestedQty = item.min_stock || 0;
+            } else if (isExpired) {
+              // Only expired - suggest min_stock
+              suggestedQty = item.min_stock || 0;
+            } else if (isBelowMin) {
+              // Only below min - suggest difference
+              suggestedQty = (item.min_stock || 0) - (item.current_stock || 0);
+            }
+
+            problemItems.push({
+              id: item.id,
+              name: item.name,
+              unit: item.unit,
+              current_stock: item.current_stock || 0,
+              min_stock: item.min_stock || 0,
+              expiry_date: item.expiry_date,
+              isExpired,
+              isBelowMin,
+              suggestedQty: Math.max(0, suggestedQty),
+            });
+          }
+        });
+
+        // Sort: expired first, then by name
+        problemItems.sort((a, b) => {
+          if (a.isExpired && !b.isExpired) return -1;
+          if (!a.isExpired && b.isExpired) return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        setItems(problemItems);
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, []);
+
+  const getFormattedList = () => {
+    const dateStr = format(new Date(), 'dd/MM/yyyy');
+    let text = `*${t('shopping.title').toUpperCase()} - ${dateStr}*\n`;
+    text += '-'.repeat(26) + '\n';
+
+    items.forEach((item) => {
+      const reason = item.isExpired 
+        ? t('shopping.tag_expired') 
+        : t('shopping.tag_below_min');
+      text += `${item.name} - ${t('shopping.reason')}: ${reason} - ${t('shopping.suggestion')}: ${item.suggestedQty} ${item.unit}.\n`;
+    });
+
+    text += '-'.repeat(26);
+    return text;
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(getFormattedList());
+      toast({
+        title: t('shopping.copied'),
+        description: t('shopping.copied_desc'),
+      });
+    } catch (error) {
+      toast({
+        title: t('common.error'),
+        description: t('shopping.copy_error'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleWhatsApp = () => {
+    const text = encodeURIComponent(getFormattedList());
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  const handlePrint = () => {
+    const printContent = document.getElementById('shopping-list-print');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const dateStr = format(new Date(), 'dd/MM/yyyy');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${t('shopping.title')} - ${dateStr}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            h1 {
+              font-size: 18px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 10px;
+              margin-bottom: 20px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f5f5f5;
+              font-weight: bold;
+            }
+            .tag {
+              display: inline-block;
+              padding: 2px 8px;
+              border-radius: 4px;
+              font-size: 12px;
+              font-weight: bold;
+            }
+            .tag-expired {
+              background-color: #7c3aed;
+              color: white;
+            }
+            .tag-below {
+              background-color: #dc2626;
+              color: white;
+            }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${t('shopping.title').toUpperCase()} - ${dateStr}</h1>
+          <table>
+            <thead>
+              <tr>
+                <th>${t('table.product')}</th>
+                <th>${t('shopping.reason')}</th>
+                <th>${t('shopping.current_qty')}</th>
+                <th>${t('shopping.suggestion')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>
+                    ${item.isExpired ? `<span class="tag tag-expired">${t('shopping.tag_expired')}</span>` : ''}
+                    ${item.isBelowMin ? `<span class="tag tag-below">${t('shopping.tag_below_min')}</span>` : ''}
+                  </td>
+                  <td>${item.current_stock} ${item.unit}</td>
+                  <td><strong>${item.suggestedQty} ${item.unit}</strong></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate('/dashboard')}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold md:text-3xl flex items-center gap-2">
+                <ShoppingCart className="h-7 w-7 text-primary" />
+                {t('shopping.title')}
+              </h1>
+              <p className="mt-1 text-muted-foreground">
+                {t('shopping.subtitle')}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleCopy}
+              disabled={items.length === 0}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {t('shopping.copy')}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleWhatsApp}
+              disabled={items.length === 0}
+              className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              {t('shopping.whatsapp')}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handlePrint}
+              disabled={items.length === 0}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              {t('shopping.print')}
+            </Button>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <Badge className="bg-expired text-expired-foreground">{t('shopping.tag_expired')}</Badge>
+            <span className="text-sm text-muted-foreground">{t('shopping.expired_desc')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="destructive">{t('shopping.tag_below_min')}</Badge>
+            <span className="text-sm text-muted-foreground">{t('shopping.below_min_desc')}</span>
+          </div>
+        </div>
+
+        {/* Items List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>{t('shopping.items_needing_attention')}</span>
+              <Badge variant="secondary">{items.length} {items.length === 1 ? 'item' : 'itens'}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">{t('common.loading')}</p>
+              </div>
+            ) : items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <ShoppingCart className="h-12 w-12 text-success mb-4" />
+                <h3 className="text-lg font-medium">{t('shopping.all_good')}</h3>
+                <p className="text-muted-foreground mt-1">{t('shopping.no_items_desc')}</p>
+              </div>
+            ) : (
+              <div id="shopping-list-print" className="space-y-3">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium">{item.name}</h3>
+                        {item.isExpired && (
+                          <Badge className="bg-expired text-expired-foreground">
+                            {t('shopping.tag_expired')}
+                          </Badge>
+                        )}
+                        {item.isBelowMin && (
+                          <Badge variant="destructive">
+                            {t('shopping.tag_below_min')}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {t('shopping.current')}: {item.current_stock} {item.unit} | 
+                        {t('shopping.minimum')}: {item.min_stock} {item.unit}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-lg">
+                      <span className="text-sm text-muted-foreground">{t('shopping.suggestion')}:</span>
+                      <span className="text-lg font-bold text-primary">
+                        {item.suggestedQty} {item.unit}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+}

@@ -5,13 +5,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { Package, AlertTriangle, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 
 interface StockStats {
   totalItems: number;
   lowStock: number;
   expiringSoon: number;
+  expired: number;
   upToDate: number;
 }
 
@@ -23,6 +24,7 @@ export default function Dashboard() {
     totalItems: 0,
     lowStock: 0,
     expiringSoon: 0,
+    expired: 0,
     upToDate: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -37,16 +39,21 @@ export default function Dashboard() {
         if (error) throw error;
 
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
         let lowStock = 0;
         let expiringSoon = 0;
+        let expired = 0;
 
         items?.forEach((item) => {
           if (item.current_stock < item.min_stock) {
             lowStock++;
           }
           if (item.expiry_date) {
-            const daysUntilExpiry = differenceInDays(parseISO(item.expiry_date), today);
-            if (daysUntilExpiry <= 1 && daysUntilExpiry >= 0) {
+            const expiryDate = parseISO(item.expiry_date);
+            const daysUntilExpiry = differenceInDays(expiryDate, today);
+            if (daysUntilExpiry < 0) {
+              expired++;
+            } else if (daysUntilExpiry <= 1) {
               expiringSoon++;
             }
           }
@@ -56,7 +63,8 @@ export default function Dashboard() {
           totalItems: items?.length || 0,
           lowStock,
           expiringSoon,
-          upToDate: (items?.length || 0) - lowStock - expiringSoon,
+          expired,
+          upToDate: (items?.length || 0) - lowStock - expiringSoon - expired,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -68,8 +76,10 @@ export default function Dashboard() {
     fetchStats();
   }, []);
 
-  const handleCardClick = (filter?: string) => {
-    if (filter) {
+  const handleCardClick = (filter?: string, route?: string) => {
+    if (route) {
+      navigate(route);
+    } else if (filter) {
       navigate(`/stock-entry?filter=${filter}`);
     }
   };
@@ -90,7 +100,16 @@ export default function Dashboard() {
       color: 'text-warning',
       bgColor: 'bg-warning/10',
       clickable: true,
-      filter: 'low-stock',
+      route: '/shopping-list',
+    },
+    {
+      titleKey: 'dashboard.expired_items',
+      value: stats.expired,
+      icon: XCircle,
+      color: 'text-expired',
+      bgColor: 'bg-expired/10',
+      clickable: true,
+      route: '/shopping-list',
     },
     {
       titleKey: 'dashboard.expiring_soon',
@@ -122,7 +141,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {statCards.map((stat) => (
             <Card 
               key={stat.titleKey} 
@@ -131,7 +150,7 @@ export default function Dashboard() {
                   ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02] hover:border-primary/50' 
                   : ''
               }`}
-              onClick={() => stat.clickable && stat.filter && handleCardClick(stat.filter)}
+              onClick={() => stat.clickable && handleCardClick(stat.filter, stat.route)}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
