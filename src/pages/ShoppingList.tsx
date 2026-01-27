@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, MessageCircle, Printer, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Copy, MessageCircle, Printer, ShoppingCart, ArrowLeft, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -29,6 +29,7 @@ export default function ShoppingList() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function ShoppingList() {
         today.setHours(0, 0, 0, 0);
 
         const problemItems: ShoppingItem[] = [];
+        const initialQuantities: Record<string, number> = {};
 
         data?.forEach((item) => {
           let isExpired = false;
@@ -65,19 +67,17 @@ export default function ShoppingList() {
             let suggestedQty = 0;
             
             if (isExpired) {
-              // Expired - suggest min_stock (need full replacement)
               suggestedQty = item.min_stock || 0;
             } else if (isExpiringSoon && isBelowMin) {
-              // Expiring soon and below min - suggest min_stock
               suggestedQty = item.min_stock || 0;
             } else if (isExpiringSoon) {
-              // Only expiring soon - suggest min_stock (will need replacement soon)
               suggestedQty = item.min_stock || 0;
             } else if (isBelowMin) {
-              // Only below min - suggest difference
               suggestedQty = (item.min_stock || 0) - (item.current_stock || 0);
             }
 
+            const finalQty = Math.max(0, suggestedQty);
+            
             problemItems.push({
               id: item.id,
               name: item.name,
@@ -88,12 +88,13 @@ export default function ShoppingList() {
               isExpired,
               isExpiringSoon,
               isBelowMin,
-              suggestedQty: Math.max(0, suggestedQty),
+              suggestedQty: finalQty,
             });
+
+            initialQuantities[item.id] = finalQty;
           }
         });
 
-        // Sort: expired first, then expiring soon, then below min, then by name
         problemItems.sort((a, b) => {
           if (a.isExpired && !b.isExpired) return -1;
           if (!a.isExpired && b.isExpired) return 1;
@@ -103,6 +104,7 @@ export default function ShoppingList() {
         });
 
         setItems(problemItems);
+        setEditedQuantities(initialQuantities);
       } catch (error) {
         console.error('Error fetching items:', error);
       } finally {
@@ -113,40 +115,50 @@ export default function ShoppingList() {
     fetchItems();
   }, []);
 
+  const handleQuantityChange = (itemId: string, value: string) => {
+    const numValue = parseInt(value, 10);
+    setEditedQuantities(prev => ({
+      ...prev,
+      [itemId]: isNaN(numValue) || numValue < 0 ? 0 : numValue
+    }));
+  };
+
+  const getItemQuantity = (itemId: string) => {
+    return editedQuantities[itemId] ?? 0;
+  };
+
   const getFormattedList = () => {
     const dateStr = format(new Date(), 'dd/MM/yyyy');
     let text = `*${t('shopping.title').toUpperCase()} - ${dateStr}*\n`;
 
-    // Group items by category
     const belowMinItems = items.filter(item => item.isBelowMin && !item.isExpired && !item.isExpiringSoon);
     const expiringSoonItems = items.filter(item => item.isExpiringSoon);
     const expiredItems = items.filter(item => item.isExpired);
 
-    // Below Minimum section
     if (belowMinItems.length > 0) {
       text += `-----------${t('shopping.tag_below_min')}---------------\n`;
       belowMinItems.forEach((item) => {
-        text += `${item.name} - ${item.suggestedQty} ${item.unit}\n`;
+        const qty = getItemQuantity(item.id);
+        text += `${item.name} - ${qty} ${item.unit}\n`;
       });
     }
 
-    // Expiring Soon section
     if (expiringSoonItems.length > 0) {
       text += `-----------${t('shopping.tag_expiring_soon')}---------------\n`;
       expiringSoonItems.forEach((item) => {
-        text += `${item.name} - ${item.suggestedQty} ${item.unit}\n`;
+        const qty = getItemQuantity(item.id);
+        text += `${item.name} - ${qty} ${item.unit}\n`;
       });
     }
 
-    // Expired section
     if (expiredItems.length > 0) {
       text += `-------------${t('shopping.tag_expired')}-------------\n`;
       expiredItems.forEach((item) => {
-        text += `${item.name} - ${item.suggestedQty} ${item.unit}\n`;
+        const qty = getItemQuantity(item.id);
+        text += `${item.name} - ${qty} ${item.unit}\n`;
       });
     }
 
-    // If list is empty
     if (items.length === 0) {
       text += `\n${t('shopping.no_items_pending')}\n`;
     }
@@ -171,8 +183,9 @@ export default function ShoppingList() {
   };
 
   const handleWhatsApp = () => {
-    const text = encodeURIComponent(getFormattedList());
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+    const message = encodeURIComponent(getFormattedList());
+    const url = `https://api.whatsapp.com/send?text=${message}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handlePrint = () => {
@@ -187,12 +200,15 @@ export default function ShoppingList() {
     const expiredItems = items.filter(item => item.isExpired);
 
     const generateTableRows = (itemList: ShoppingItem[]) => {
-      return itemList.map(item => `
-        <tr>
-          <td>${item.name}</td>
-          <td><strong>${item.suggestedQty} ${item.unit}</strong></td>
-        </tr>
-      `).join('');
+      return itemList.map(item => {
+        const qty = getItemQuantity(item.id);
+        return `
+          <tr>
+            <td>${item.name}</td>
+            <td><strong>${qty} ${item.unit}</strong></td>
+          </tr>
+        `;
+      }).join('');
     };
 
     const generateSection = (title: string, itemList: ShoppingItem[], tagClass: string) => {
@@ -342,7 +358,7 @@ export default function ShoppingList() {
               variant="outline" 
               onClick={handleWhatsApp}
               disabled={items.length === 0}
-              className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+              className="text-success border-success hover:bg-success/10 hover:text-success"
             >
               <MessageCircle className="mr-2 h-4 w-4" />
               {t('shopping.whatsapp')}
@@ -424,11 +440,17 @@ export default function ShoppingList() {
                         {t('shopping.minimum')}: {item.min_stock} {item.unit}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-lg">
-                      <span className="text-sm text-muted-foreground">{t('shopping.suggestion')}:</span>
-                      <span className="text-lg font-bold text-primary">
-                        {item.suggestedQty} {item.unit}
-                      </span>
+                    <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg border-2 border-dashed border-primary/30">
+                      <Pencil className="h-4 w-4 text-primary" />
+                      <span className="text-sm text-muted-foreground">{t('shopping.quantity')}:</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={getItemQuantity(item.id)}
+                        onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                        className="w-20 h-8 text-center font-bold text-primary border-primary/50 focus:border-primary"
+                      />
+                      <span className="text-sm font-medium">{item.unit}</span>
                     </div>
                   </div>
                 ))}
