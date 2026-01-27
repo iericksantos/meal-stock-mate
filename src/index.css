@@ -56,6 +56,11 @@
     --expired-foreground: 0 0% 100%;
     --expired-light: 271 76% 95%;
 
+    /* Expiring Soon/Vencimento Próximo - Laranja */
+    --expiring: 25 95% 53%;
+    --expiring-foreground: 0 0% 100%;
+    --expiring-light: 25 100% 92%;
+
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 217 91% 50%;
@@ -123,6 +128,11 @@
     --expired: 271 76% 50%;
     --expired-foreground: 0 0% 100%;
     --expired-light: 271 50% 20%;
+
+    /* Expiring Soon/Vencimento Próximo - Laranja */
+    --expiring: 25 95% 53%;
+    --expiring-foreground: 0 0% 100%;
+    --expiring-light: 25 50% 20%;
 
     --border: 220 20% 25%;
     --input: 220 20% 25%;

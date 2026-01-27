@@ -71,6 +71,11 @@ export default {
           foreground: "hsl(var(--expired-foreground))",
           light: "hsl(var(--expired-light))",
         },
+        expiring: {
+          DEFAULT: "hsl(var(--expiring))",
+          foreground: "hsl(var(--expiring-foreground))",
+          light: "hsl(var(--expiring-light))",
+        },
         table: {
           header: "hsl(var(--table-header))",
           "row-alt": "hsl(var(--table-row-alt))",
