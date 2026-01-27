@@ -220,19 +220,24 @@ export default function Users() {
     if (!confirm(t('users.confirm_delete'))) return;
 
     try {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: userId },
+      });
 
-      if (roleError) throw roleError;
+      if (error) {
+        throw new Error(error.message || 'Failed to delete user');
+      }
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', userId);
-
-      if (profileError) throw profileError;
+      if (data?.error) {
+        if (data.error === 'permission_denied') {
+          toast({
+            title: t('users.permission_denied'),
+            variant: 'destructive',
+          });
+          return;
+        }
+        throw new Error(data.message || data.error);
+      }
 
       toast({ title: t('users.deleted') });
       fetchUsers();
