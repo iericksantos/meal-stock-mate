@@ -103,7 +103,7 @@ serve(async (req) => {
     });
 
     if (authError) {
-      console.error("Error creating user:", authError);
+      console.error("User creation failed:", authError.code || "unknown_error");
       
       // Check for duplicate email
       if (authError.message?.includes("already") || authError.message?.includes("duplicate")) {
@@ -133,7 +133,7 @@ serve(async (req) => {
     });
 
     if (profileError) {
-      console.error("Error creating profile:", profileError);
+      console.error("Profile creation failed:", profileError.code || "unknown_error");
       // Try to clean up the created user
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return new Response(
@@ -149,7 +149,7 @@ serve(async (req) => {
     });
 
     if (roleInsertError) {
-      console.error("Error creating role:", roleInsertError);
+      console.error("Role assignment failed:", roleInsertError.code || "unknown_error");
       // Try to clean up
       await supabaseAdmin.from("profiles").delete().eq("user_id", authData.user.id);
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
@@ -159,7 +159,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`User created successfully: ${email} with role ${role}`);
+    console.log(`User created successfully with role: ${role}`);
 
     return new Response(
       JSON.stringify({
@@ -174,7 +174,7 @@ serve(async (req) => {
       { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    console.error("Unexpected error:", error);
+    console.error("Unexpected server error occurred");
     const message = error instanceof Error ? error.message : "Unknown error occurred";
     return new Response(
       JSON.stringify({ error: "server_error", message }),
