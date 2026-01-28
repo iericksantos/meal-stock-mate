@@ -13,6 +13,7 @@ import {
   Settings,
   FileText,
   ShoppingCart,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -50,6 +51,12 @@ const navItems = [
     href: '/shopping-list',
     icon: ShoppingCart,
     roles: ['host', 'admin', 'staff'],
+  },
+  {
+    titleKey: 'nav.dishes',
+    href: '/dishes',
+    icon: UtensilsCrossed,
+    roles: ['host', 'admin'],
   },
   {
     titleKey: 'nav.audit_history',
