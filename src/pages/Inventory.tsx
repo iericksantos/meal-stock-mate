@@ -222,7 +222,7 @@ export default function Inventory() {
         category_id: newItem.category_id,
         unit: newItem.unit,
         min_stock: newItem.min_stock,
-        supplier_id: newItem.supplier_id || null,
+        supplier_id: newItem.supplier_id && newItem.supplier_id !== 'none' ? newItem.supplier_id : null,
         created_by: user?.id,
       });
 
@@ -251,7 +251,7 @@ export default function Inventory() {
           name: newItem.name.trim(),
           unit: newItem.unit,
           min_stock: newItem.min_stock,
-          supplier_id: newItem.supplier_id || null,
+          supplier_id: newItem.supplier_id && newItem.supplier_id !== 'none' ? newItem.supplier_id : null,
         })
         .eq('id', editingItem.id);
 
@@ -331,7 +331,7 @@ export default function Inventory() {
       category_id: item.category_id,
       unit: item.unit,
       min_stock: item.min_stock,
-      supplier_id: item.supplier_id || '',
+      supplier_id: item.supplier_id || 'none',
     });
     setItemModalOpen(true);
   };
@@ -478,7 +478,7 @@ export default function Inventory() {
                       <SelectValue placeholder="Selecione um fornecedor (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="none">Nenhum</SelectItem>
                       {suppliers.map((supplier) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}
