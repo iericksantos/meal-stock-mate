@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import SaleDestinationModal from '@/components/SaleDestinationModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -92,6 +94,7 @@ interface StockIssue {
 export default function Dishes() {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const { toast } = useToast();
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [technicalSheets, setTechnicalSheets] = useState<TechnicalSheet[]>([]);
@@ -107,6 +110,7 @@ export default function Dishes() {
   const [stockIssues, setStockIssues] = useState<StockIssue[]>([]);
   const [confirmSaleOpen, setConfirmSaleOpen] = useState(false);
   const [processingAction, setProcessingAction] = useState(false);
+  const [destinationModalOpen, setDestinationModalOpen] = useState(false);
 
   // Form states
   const [dishForm, setDishForm] = useState({
@@ -361,17 +365,51 @@ export default function Dishes() {
       return;
     }
 
-    // No issues, proceed to confirm
-    setConfirmSaleOpen(true);
+    // No issues, show destination modal
+    setSaleModalOpen(false);
+    setDestinationModalOpen(true);
   };
 
-  const handleConfirmSale = async () => {
+  const handleConfirmSale = async (destination: { type: 'table' | 'counter'; tableId?: string; tableNumber?: number; customerName?: string; orderId: string }) => {
     if (!selectedDishForSale || !user) return;
 
     setProcessingAction(true);
 
     try {
       const dishIngredients = getDishIngredients(selectedDishForSale.id);
+      const orderLabel = destination.type === 'table' 
+        ? `Mesa ${destination.tableNumber}` 
+        : destination.customerName || 'Balcão';
+
+      // Add item to order
+      const { data: orderItem, error: orderItemError } = await supabase
+        .from('order_items')
+        .insert({
+          order_id: destination.orderId,
+          dish_id: selectedDishForSale.id,
+          dish_name: selectedDishForSale.name,
+          quantity: saleQuantity,
+          unit_price: selectedDishForSale.price,
+          status: 'pending',
+          sent_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (orderItemError) throw orderItemError;
+
+      // Update order total
+      const { data: currentOrder } = await supabase
+        .from('orders')
+        .select('total')
+        .eq('id', destination.orderId)
+        .single();
+
+      const newTotal = (currentOrder?.total || 0) + (selectedDishForSale.price * saleQuantity);
+      await supabase
+        .from('orders')
+        .update({ total: newTotal })
+        .eq('id', destination.orderId);
 
       // Deduct stock for each ingredient
       for (const ing of dishIngredients) {
@@ -396,7 +434,7 @@ export default function Dishes() {
 
         if (updateError) throw updateError;
 
-        // Record in stock history
+        // Record in stock history with order reference
         const { error: historyError } = await supabase
           .from('stock_history')
           .insert({
@@ -405,7 +443,9 @@ export default function Dishes() {
             new_stock: newStock,
             changed_by: user.id,
             movement_type: 'withdrawal',
-            reason: `${t('dishes.sale_reason')}: ${selectedDishForSale.name} (x${saleQuantity})`,
+            reason: `${t('dishes.sale_reason')}: ${selectedDishForSale.name} x${saleQuantity} - ${orderLabel}`,
+            order_id: destination.orderId,
+            order_item_id: orderItem.id,
           });
 
         if (historyError) throw historyError;
@@ -413,9 +453,10 @@ export default function Dishes() {
 
       toast({
         title: t('dishes.sale_success'),
-        description: `${selectedDishForSale.name} x${saleQuantity}`,
+        description: `${t('dishes.order_sent_to')} ${orderLabel}`,
       });
 
+      setDestinationModalOpen(false);
       setConfirmSaleOpen(false);
       setSaleModalOpen(false);
       setSelectedDishForSale(null);
@@ -768,30 +809,14 @@ export default function Dishes() {
           </DialogContent>
         </Dialog>
 
-        {/* Confirm Sale Alert */}
-        <AlertDialog open={confirmSaleOpen} onOpenChange={setConfirmSaleOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t('dishes.confirm_sale_title')}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t('dishes.confirm_sale_desc')
-                  .replace('{dish}', selectedDishForSale?.name || '')
-                  .replace('{quantity}', saleQuantity.toString())}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={processingAction}>
-                {t('common.cancel')}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleConfirmSale}
-                disabled={processingAction}
-              >
-                {processingAction ? t('common.saving') : t('dishes.confirm')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Sale Destination Modal */}
+        <SaleDestinationModal
+          open={destinationModalOpen}
+          onOpenChange={setDestinationModalOpen}
+          onConfirm={handleConfirmSale}
+          dishName={selectedDishForSale?.name || ''}
+          quantity={saleQuantity}
+        />
       </div>
     </DashboardLayout>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuditDetailModal from '@/components/AuditDetailModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, FileText, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
+import { Search, FileText, ArrowDownCircle, ArrowUpCircle, RefreshCw, Eye } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR, es, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,8 @@ interface StockHistoryEntry {
   movement_type: string;
   reason: string | null;
   created_at: string;
+  order_id?: string | null;
+  order_item_id?: string | null;
   item_name?: string;
   user_email?: string;
 }
@@ -52,6 +55,8 @@ export default function AuditHistory() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [movementFilter, setMovementFilter] = useState<string>('all');
+  const [selectedEntry, setSelectedEntry] = useState<StockHistoryEntry | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const getLocale = () => {
     switch (language) {
@@ -91,7 +96,9 @@ export default function AuditHistory() {
           changed_by,
           movement_type,
           reason,
-          created_at
+          created_at,
+          order_id,
+          order_item_id
         `)
         .order('created_at', { ascending: false });
 
@@ -258,8 +265,13 @@ export default function AuditHistory() {
                         className={cn(
                           index % 2 === 1 ? 'bg-table-row-alt' : '',
                           isPositiveMovement && 'border-l-4 border-l-success',
-                          isNegativeMovement && 'border-l-4 border-l-destructive'
+                          isNegativeMovement && 'border-l-4 border-l-destructive',
+                          'cursor-pointer hover:bg-muted/50'
                         )}
+                        onClick={() => {
+                          setSelectedEntry(entry);
+                          setDetailModalOpen(true);
+                        }}
                       >
                         <TableCell className="whitespace-nowrap">
                           {format(parseISO(entry.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: getLocale() })}
@@ -287,7 +299,10 @@ export default function AuditHistory() {
                           {entry.new_stock}
                         </TableCell>
                         <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                          {entry.reason || '-'}
+                          <div className="flex items-center gap-2">
+                            <span className="truncate">{entry.reason || '-'}</span>
+                            <Eye className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -297,6 +312,13 @@ export default function AuditHistory() {
             </div>
           </Card>
         )}
+
+        {/* Detail Modal */}
+        <AuditDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          entry={selectedEntry}
+        />
       </div>
     </DashboardLayout>
   );

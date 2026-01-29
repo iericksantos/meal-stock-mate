@@ -374,6 +374,39 @@ const translations: Record<Language, Record<string, string>> = {
     'dining.needed': 'necessário',
     'dining.available': 'disponível',
     'dining.sale_reason': 'Pedido mesa',
+    'dining.remove_error': 'Erro ao remover item',
+
+    // Dashboard - Active Orders
+    'dashboard.active_orders': 'Pedidos Ativos',
+    'dashboard.no_active_orders': 'Nenhum pedido em aberto',
+    'dashboard.view_dining': 'Ver Salão',
+
+    // Dishes - Sale Destination
+    'dishes.sale_destination': 'Destino do Pedido',
+    'dishes.sale_destination_desc': 'Onde será consumido {quantity}x {dish}?',
+    'dishes.destination_table': 'Mesa',
+    'dishes.destination_counter': 'Balcão',
+    'dishes.select_table': 'Selecione a mesa',
+    'dishes.select_table_placeholder': 'Escolha uma mesa...',
+    'dishes.tables_occupied': 'Mesas Ocupadas',
+    'dishes.tables_free': 'Mesas Livres',
+    'dishes.send_order': 'Enviar Pedido',
+    'dishes.order_sent_to': 'Pedido enviado para',
+
+    // Billing / Review
+    'billing.review_title': 'Revisão da Conta',
+    'billing.admin_only_remove': 'Apenas administradores podem remover itens',
+    'billing.admin_only_remove_hint': 'Apenas administradores podem remover itens da conta',
+    'billing.confirm_payment': 'Confirmar Pagamento',
+    'billing.close_and_print': 'Fechar e Imprimir',
+
+    // Audit Details
+    'audit.detail_title': 'Detalhes da Movimentação',
+    'audit.previous_stock': 'Estoque Anterior',
+    'audit.new_stock': 'Novo Estoque',
+    'audit.changed_by': 'Alterado por',
+    'audit.sale_details': 'Detalhes da Venda',
+    'audit.order_details_unavailable': 'Detalhes do pedido não disponíveis',
   },
   'es': {
     // Auth
@@ -740,6 +773,39 @@ const translations: Record<Language, Record<string, string>> = {
     'dining.needed': 'necesario',
     'dining.available': 'disponible',
     'dining.sale_reason': 'Pedido mesa',
+    'dining.remove_error': 'Error al eliminar ítem',
+
+    // Dashboard - Active Orders
+    'dashboard.active_orders': 'Pedidos Activos',
+    'dashboard.no_active_orders': 'Ningún pedido abierto',
+    'dashboard.view_dining': 'Ver Salón',
+
+    // Dishes - Sale Destination
+    'dishes.sale_destination': 'Destino del Pedido',
+    'dishes.sale_destination_desc': '¿Dónde se consumirá {quantity}x {dish}?',
+    'dishes.destination_table': 'Mesa',
+    'dishes.destination_counter': 'Mostrador',
+    'dishes.select_table': 'Seleccione la mesa',
+    'dishes.select_table_placeholder': 'Elija una mesa...',
+    'dishes.tables_occupied': 'Mesas Ocupadas',
+    'dishes.tables_free': 'Mesas Libres',
+    'dishes.send_order': 'Enviar Pedido',
+    'dishes.order_sent_to': 'Pedido enviado a',
+
+    // Billing / Review
+    'billing.review_title': 'Revisión de la Cuenta',
+    'billing.admin_only_remove': 'Solo administradores pueden eliminar ítems',
+    'billing.admin_only_remove_hint': 'Solo administradores pueden eliminar ítems de la cuenta',
+    'billing.confirm_payment': 'Confirmar Pago',
+    'billing.close_and_print': 'Cerrar e Imprimir',
+
+    // Audit Details
+    'audit.detail_title': 'Detalles del Movimiento',
+    'audit.previous_stock': 'Stock Anterior',
+    'audit.new_stock': 'Nuevo Stock',
+    'audit.changed_by': 'Modificado por',
+    'audit.sale_details': 'Detalles de la Venta',
+    'audit.order_details_unavailable': 'Detalles del pedido no disponibles',
   },
   'en': {
     // Auth
@@ -1106,6 +1172,39 @@ const translations: Record<Language, Record<string, string>> = {
     'dining.needed': 'needed',
     'dining.available': 'available',
     'dining.sale_reason': 'Table order',
+    'dining.remove_error': 'Error removing item',
+
+    // Dashboard - Active Orders
+    'dashboard.active_orders': 'Active Orders',
+    'dashboard.no_active_orders': 'No open orders',
+    'dashboard.view_dining': 'View Dining Room',
+
+    // Dishes - Sale Destination
+    'dishes.sale_destination': 'Order Destination',
+    'dishes.sale_destination_desc': 'Where will {quantity}x {dish} be consumed?',
+    'dishes.destination_table': 'Table',
+    'dishes.destination_counter': 'Counter',
+    'dishes.select_table': 'Select the table',
+    'dishes.select_table_placeholder': 'Choose a table...',
+    'dishes.tables_occupied': 'Occupied Tables',
+    'dishes.tables_free': 'Free Tables',
+    'dishes.send_order': 'Send Order',
+    'dishes.order_sent_to': 'Order sent to',
+
+    // Billing / Review
+    'billing.review_title': 'Bill Review',
+    'billing.admin_only_remove': 'Only admins can remove items',
+    'billing.admin_only_remove_hint': 'Only admins can remove items from the bill',
+    'billing.confirm_payment': 'Confirm Payment',
+    'billing.close_and_print': 'Close and Print',
+
+    // Audit Details
+    'audit.detail_title': 'Movement Details',
+    'audit.previous_stock': 'Previous Stock',
+    'audit.new_stock': 'New Stock',
+    'audit.changed_by': 'Changed by',
+    'audit.sale_details': 'Sale Details',
+    'audit.order_details_unavailable': 'Order details unavailable',
   },
 };
 
