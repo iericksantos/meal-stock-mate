@@ -16,6 +16,7 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import ShoppingList from "./pages/ShoppingList";
 import Dishes from "./pages/Dishes";
+import DiningRoom from "./pages/DiningRoom";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/shopping-list" element={<ShoppingList />} />
                 <Route path="/dishes" element={<Dishes />} />
+                <Route path="/dining-room" element={<DiningRoom />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AuthProvider>

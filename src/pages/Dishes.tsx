@@ -57,6 +57,7 @@ interface Dish {
   id: string;
   name: string;
   description: string | null;
+  price: number;
   created_at: string;
 }
 
@@ -73,6 +74,7 @@ interface Item {
   unit: string;
   current_stock: number;
   min_stock: number;
+  units_per_package: number;
 }
 
 interface Ingredient {
@@ -110,6 +112,7 @@ export default function Dishes() {
   const [dishForm, setDishForm] = useState({
     name: '',
     description: '',
+    price: 0,
   });
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
 
@@ -122,7 +125,7 @@ export default function Dishes() {
       const [dishesRes, sheetsRes, itemsRes] = await Promise.all([
         supabase.from('dishes').select('*').order('name'),
         supabase.from('technical_sheets').select('*'),
-        supabase.from('items').select('id, name, unit, current_stock, min_stock').order('name'),
+        supabase.from('items').select('id, name, unit, current_stock, min_stock, units_per_package').order('name'),
       ]);
 
       if (dishesRes.error) throw dishesRes.error;
@@ -159,7 +162,7 @@ export default function Dishes() {
   };
 
   const resetForm = () => {
-    setDishForm({ name: '', description: '' });
+    setDishForm({ name: '', description: '', price: 0 });
     setIngredients([]);
     setEditingDish(null);
   };
@@ -174,6 +177,7 @@ export default function Dishes() {
     setDishForm({
       name: dish.name,
       description: dish.description || '',
+      price: dish.price || 0,
     });
     const dishIngredients = getDishIngredients(dish.id);
     setIngredients(
@@ -235,6 +239,7 @@ export default function Dishes() {
           .update({
             name: dishForm.name.trim(),
             description: dishForm.description.trim() || null,
+            price: dishForm.price,
           })
           .eq('id', editingDish.id);
 
@@ -250,6 +255,7 @@ export default function Dishes() {
           .insert({
             name: dishForm.name.trim(),
             description: dishForm.description.trim() || null,
+            price: dishForm.price,
             created_by: user?.id,
           })
           .select()
@@ -327,11 +333,15 @@ export default function Dishes() {
       const item = getItemById(ing.item_id);
       if (!item) continue;
 
-      const needed = ing.quantity_per_sale * quantity;
-      if (item.current_stock < needed) {
+      // Calculate needed quantity considering units_per_package
+      const neededUnits = ing.quantity_per_sale * quantity;
+      const unitsPerPackage = item.units_per_package || 1;
+      const neededPackages = neededUnits / unitsPerPackage;
+
+      if (item.current_stock < neededPackages) {
         issues.push({
           itemName: item.name,
-          needed,
+          needed: neededPackages,
           available: item.current_stock,
           unit: item.unit,
         });
@@ -368,7 +378,10 @@ export default function Dishes() {
         const item = getItemById(ing.item_id);
         if (!item) continue;
 
-        const quantityToDeduct = ing.quantity_per_sale * saleQuantity;
+        // Calculate deduction considering units_per_package
+        const neededUnits = ing.quantity_per_sale * saleQuantity;
+        const unitsPerPackage = item.units_per_package || 1;
+        const quantityToDeduct = neededUnits / unitsPerPackage;
         const newStock = item.current_stock - quantityToDeduct;
 
         // Update item stock
@@ -471,15 +484,29 @@ export default function Dishes() {
                     onChange={(e) => setDishForm({ ...dishForm, name: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dishDescription">{t('dishes.description')}</Label>
-                  <Textarea
-                    id="dishDescription"
-                    placeholder={t('dishes.description_placeholder')}
-                    value={dishForm.description}
-                    onChange={(e) => setDishForm({ ...dishForm, description: e.target.value })}
-                    rows={2}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dishDescription">{t('dishes.description')}</Label>
+                    <Textarea
+                      id="dishDescription"
+                      placeholder={t('dishes.description_placeholder')}
+                      value={dishForm.description}
+                      onChange={(e) => setDishForm({ ...dishForm, description: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dishPrice">{t('dishes.price')} (€)</Label>
+                    <Input
+                      id="dishPrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder={t('dishes.price_placeholder')}
+                      value={dishForm.price}
+                      onChange={(e) => setDishForm({ ...dishForm, price: Number(e.target.value) })}
+                    />
+                  </div>
                 </div>
 
                 {/* Ingredients Section */}

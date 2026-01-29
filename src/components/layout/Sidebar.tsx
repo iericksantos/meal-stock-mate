@@ -14,6 +14,7 @@ import {
   FileText,
   ShoppingCart,
   UtensilsCrossed,
+  Utensils,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -32,6 +33,12 @@ const navItems = [
     titleKey: 'nav.dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+    roles: ['host', 'admin', 'staff'],
+  },
+  {
+    titleKey: 'nav.dining_room',
+    href: '/dining-room',
+    icon: Utensils,
     roles: ['host', 'admin', 'staff'],
   },
   {
