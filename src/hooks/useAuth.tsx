@@ -2,17 +2,19 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'host' | 'admin' | 'staff';
+type AppRole = 'super_admin' | 'host' | 'admin' | 'staff';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  restaurantId: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isHost: boolean;
+  isSuperAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async (userId: string) => {
@@ -42,6 +45,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchRestaurantId = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('restaurant_id')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching restaurant_id:', error);
+        return null;
+      }
+      return data?.restaurant_id;
+    } catch (err) {
+      console.error('Error fetching restaurant_id:', err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -53,9 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Defer role fetch with setTimeout to avoid deadlock
           setTimeout(() => {
             fetchUserRole(session.user.id).then(setRole);
+            fetchRestaurantId(session.user.id).then(setRestaurantId);
           }, 0);
         } else {
           setRole(null);
+          setRestaurantId(null);
         }
       }
     );
@@ -66,8 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserRole(session.user.id).then((fetchedRole) => {
+        Promise.all([
+          fetchUserRole(session.user.id),
+          fetchRestaurantId(session.user.id)
+        ]).then(([fetchedRole, fetchedRestaurantId]) => {
           setRole(fetchedRole);
+          setRestaurantId(fetchedRestaurantId);
           setLoading(false);
         });
       } else {
@@ -97,11 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         role,
+        restaurantId,
         loading,
         signIn,
         signOut,
-        isAdmin: role === 'admin' || role === 'host',
-        isHost: role === 'host',
+        isAdmin: role === 'admin' || role === 'host' || role === 'super_admin',
+        isHost: role === 'host' || role === 'super_admin',
+        isSuperAdmin: role === 'super_admin',
       }}
     >
       {children}

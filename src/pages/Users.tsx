@@ -36,7 +36,7 @@ import { UserPlus, Users as UsersIcon, Trash2, Shield, User, Crown, Pencil } fro
 import { format, parseISO } from 'date-fns';
 import { ptBR, es, enUS } from 'date-fns/locale';
 
-type AppRole = 'host' | 'admin' | 'staff';
+type AppRole = 'super_admin' | 'host' | 'admin' | 'staff';
 
 interface UserWithRole {
   id: string;

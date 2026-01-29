@@ -10,7 +10,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   full_name: string;
-  role: "host" | "admin" | "staff";
+  role: "super_admin" | "host" | "admin" | "staff";
 }
 
 serve(async (req) => {
@@ -90,24 +90,50 @@ serve(async (req) => {
       );
     }
 
-    if (!["host", "admin", "staff"].includes(role)) {
+    if (!["super_admin", "host", "admin", "staff"].includes(role)) {
       return new Response(
-        JSON.stringify({ error: "Role must be 'host', 'admin' or 'staff'" }),
+        JSON.stringify({ error: "Role must be 'super_admin', 'host', 'admin' or 'staff'" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // HIERARCHY CHECK
-    // Host can create any role
-    // Admin can only create staff
-    if (requesterRole === 'admin' && role !== 'staff') {
-      return new Response(
-        JSON.stringify({ error: "permission_denied", message: "Admins can only create staff users" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Get requester's restaurant_id
+    const { data: requesterProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("restaurant_id")
+      .eq("user_id", currentUser.id)
+      .single();
 
-    if (requesterRole === 'staff') {
+    const requesterRestaurantId = requesterProfile?.restaurant_id;
+
+    // HIERARCHY CHECK
+    // super_admin can create any role except other super_admins
+    // Host can create host, admin, staff within their restaurant
+    // Admin can only create staff within their restaurant
+    if (requesterRole === 'super_admin') {
+      // super_admin can create hosts and below, but not other super_admins
+      if (role === 'super_admin') {
+        return new Response(
+          JSON.stringify({ error: "permission_denied", message: "Cannot create super_admin users" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else if (requesterRole === 'host') {
+      // Host can create admin and staff, but not host or super_admin
+      if (role === 'host' || role === 'super_admin') {
+        return new Response(
+          JSON.stringify({ error: "permission_denied", message: "Hosts can only create admin or staff users" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else if (requesterRole === 'admin') {
+      if (role !== 'staff') {
+        return new Response(
+          JSON.stringify({ error: "permission_denied", message: "Admins can only create staff users" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else {
       return new Response(
         JSON.stringify({ error: "permission_denied", message: "Staff cannot create users" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -145,11 +171,12 @@ serve(async (req) => {
       );
     }
 
-    // Create profile with email
+    // Create profile with email and restaurant_id (inherit from requester for non-super_admin)
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       user_id: authData.user.id,
       full_name,
       email,
+      restaurant_id: requesterRestaurantId,
     });
 
     if (profileError) {

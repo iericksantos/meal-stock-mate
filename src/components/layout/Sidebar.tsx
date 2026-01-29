@@ -16,6 +16,7 @@ import {
   UtensilsCrossed,
   Utensils,
   Globe,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -37,58 +38,64 @@ import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog';
 
 const navItems = [
   {
+    titleKey: 'nav.clients',
+    href: '/clients',
+    icon: Building2,
+    roles: ['super_admin'],
+  },
+  {
     titleKey: 'nav.dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['host', 'admin', 'staff'],
+    roles: ['super_admin', 'host', 'admin', 'staff'],
   },
   {
     titleKey: 'nav.dining_room',
     href: '/dining-room',
     icon: Utensils,
-    roles: ['host', 'admin', 'staff'],
+    roles: ['super_admin', 'host', 'admin', 'staff'],
   },
   {
     titleKey: 'nav.inventory',
     href: '/inventory',
     icon: Package,
-    roles: ['host', 'admin'],
+    roles: ['super_admin', 'host', 'admin'],
   },
   {
     titleKey: 'nav.stock_entry',
     href: '/stock-entry',
     icon: ClipboardList,
-    roles: ['host', 'admin', 'staff'],
+    roles: ['super_admin', 'host', 'admin', 'staff'],
   },
   {
     titleKey: 'nav.shopping_list',
     href: '/shopping-list',
     icon: ShoppingCart,
-    roles: ['host', 'admin', 'staff'],
+    roles: ['super_admin', 'host', 'admin', 'staff'],
   },
   {
     titleKey: 'nav.dishes',
     href: '/dishes',
     icon: UtensilsCrossed,
-    roles: ['host', 'admin'],
+    roles: ['super_admin', 'host', 'admin'],
   },
   {
     titleKey: 'nav.audit_history',
     href: '/audit-history',
     icon: FileText,
-    roles: ['host', 'admin'],
+    roles: ['super_admin', 'host', 'admin'],
   },
   {
     titleKey: 'nav.users',
     href: '/users',
     icon: Users,
-    roles: ['host', 'admin'],
+    roles: ['super_admin', 'host', 'admin'],
   },
   {
     titleKey: 'nav.settings',
     href: '/settings',
     icon: Settings,
-    roles: ['host', 'admin', 'staff'],
+    roles: ['super_admin', 'host', 'admin', 'staff'],
   },
 ];
 
