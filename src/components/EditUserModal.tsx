@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Shield, User, Crown } from 'lucide-react';
 
-type AppRole = 'host' | 'admin' | 'staff';
+type AppRole = 'super_admin' | 'host' | 'admin' | 'staff';
 
 interface UserToEdit {
   id: string;
