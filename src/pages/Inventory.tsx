@@ -59,6 +59,7 @@ interface Item {
   last_count_date: string | null;
   last_counted_by: string | null;
   supplier_id: string | null;
+  units_per_package: number;
 }
 
 interface Supplier {
@@ -95,6 +96,7 @@ export default function Inventory() {
     unit: 'un',
     min_stock: 0,
     supplier_id: '',
+    units_per_package: 1,
   });
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -222,6 +224,7 @@ export default function Inventory() {
         category_id: newItem.category_id,
         unit: newItem.unit,
         min_stock: newItem.min_stock,
+        units_per_package: newItem.units_per_package,
         supplier_id: newItem.supplier_id && newItem.supplier_id !== 'none' ? newItem.supplier_id : null,
         created_by: user?.id,
       });
@@ -229,7 +232,7 @@ export default function Inventory() {
       if (error) throw error;
 
       toast({ title: 'Item criado com sucesso!' });
-      setNewItem({ name: '', category_id: '', unit: 'un', min_stock: 0, supplier_id: '' });
+      setNewItem({ name: '', category_id: '', unit: 'un', min_stock: 0, supplier_id: '', units_per_package: 1 });
       setItemModalOpen(false);
       fetchData();
     } catch (error) {
@@ -251,6 +254,7 @@ export default function Inventory() {
           name: newItem.name.trim(),
           unit: newItem.unit,
           min_stock: newItem.min_stock,
+          units_per_package: newItem.units_per_package,
           supplier_id: newItem.supplier_id && newItem.supplier_id !== 'none' ? newItem.supplier_id : null,
         })
         .eq('id', editingItem.id);
@@ -258,7 +262,7 @@ export default function Inventory() {
       if (error) throw error;
 
       toast({ title: 'Item atualizado!' });
-      setNewItem({ name: '', category_id: '', unit: 'un', min_stock: 0, supplier_id: '' });
+      setNewItem({ name: '', category_id: '', unit: 'un', min_stock: 0, supplier_id: '', units_per_package: 1 });
       setEditingItem(null);
       setItemModalOpen(false);
       fetchData();
@@ -332,13 +336,14 @@ export default function Inventory() {
       unit: item.unit,
       min_stock: item.min_stock,
       supplier_id: item.supplier_id || 'none',
+      units_per_package: item.units_per_package || 1,
     });
     setItemModalOpen(true);
   };
 
   const openAddItem = (categoryId: string) => {
     setEditingItem(null);
-    setNewItem({ name: '', category_id: categoryId, unit: 'un', min_stock: 0, supplier_id: '' });
+    setNewItem({ name: '', category_id: categoryId, unit: 'un', min_stock: 0, supplier_id: '', units_per_package: 1 });
     setItemModalOpen(true);
   };
 
@@ -464,6 +469,19 @@ export default function Inventory() {
                     }
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="unitsPerPackage">Unidades por pacote</Label>
+                <p className="text-xs text-muted-foreground">Quantas unidades de consumo vêm em cada unidade de compra?</p>
+                <Input
+                  id="unitsPerPackage"
+                  type="number"
+                  min="1"
+                  value={newItem.units_per_package}
+                  onChange={(e) =>
+                    setNewItem({ ...newItem, units_per_package: Math.max(1, Number(e.target.value)) })
+                  }
+                />
               </div>
               {suppliers.length > 0 && (
                 <div className="space-y-2">

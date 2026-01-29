@@ -119,6 +119,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          price: number
           updated_at: string | null
         }
         Insert: {
@@ -127,6 +128,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          price?: number
           updated_at?: string | null
         }
         Update: {
@@ -135,6 +137,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          price?: number
           updated_at?: string | null
         }
         Relationships: []
@@ -153,6 +156,7 @@ export type Database = {
           name: string
           supplier_id: string | null
           unit: string
+          units_per_package: number
           updated_at: string | null
         }
         Insert: {
@@ -168,6 +172,7 @@ export type Database = {
           name: string
           supplier_id?: string | null
           unit?: string
+          units_per_package?: number
           updated_at?: string | null
         }
         Update: {
@@ -183,6 +188,7 @@ export type Database = {
           name?: string
           supplier_id?: string | null
           unit?: string
+          units_per_package?: number
           updated_at?: string | null
         }
         Relationships: [
@@ -198,6 +204,104 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string | null
+          dish_id: string | null
+          dish_name: string
+          id: string
+          notes: string | null
+          order_id: string
+          quantity: number
+          sent_at: string | null
+          status: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          dish_id?: string | null
+          dish_name: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          quantity?: number
+          sent_at?: string | null
+          status?: string
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string | null
+          dish_id?: string | null
+          dish_name?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          quantity?: number
+          sent_at?: string | null
+          status?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          closed_at: string | null
+          created_at: string | null
+          id: string
+          opened_at: string | null
+          status: string
+          table_id: string | null
+          total: number | null
+          updated_at: string | null
+          waiter_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string | null
+          id?: string
+          opened_at?: string | null
+          status?: string
+          table_id?: string | null
+          total?: number | null
+          updated_at?: string | null
+          waiter_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string | null
+          id?: string
+          opened_at?: string | null
+          status?: string
+          table_id?: string | null
+          total?: number | null
+          updated_at?: string | null
+          waiter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_tables"
             referencedColumns: ["id"]
           },
         ]
@@ -226,6 +330,36 @@ export type Database = {
           id?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      restaurant_tables: {
+        Row: {
+          capacity: number
+          created_at: string | null
+          current_order_id: string | null
+          id: string
+          status: string
+          table_number: number
+          updated_at: string | null
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string | null
+          current_order_id?: string | null
+          id?: string
+          status?: string
+          table_number: number
+          updated_at?: string | null
+        }
+        Update: {
+          capacity?: number
+          created_at?: string | null
+          current_order_id?: string | null
+          id?: string
+          status?: string
+          table_number?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
