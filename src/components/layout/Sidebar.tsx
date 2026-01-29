@@ -97,6 +97,18 @@ export default function Sidebar() {
     item.roles.includes(role || 'staff')
   );
 
+  const handleMouseEnter = () => {
+    if (!isMobile) {
+      setCollapsed(false);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!isMobile) {
+      setCollapsed(true);
+    }
+  };
+
   const handleNavClick = () => {
     if (isMobile) {
       setMobileOpen(false);
@@ -227,10 +239,11 @@ export default function Sidebar() {
 
       {/* Desktop Sidebar */}
       <aside
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className={cn(
           'hidden md:flex fixed left-0 top-0 z-40 h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300',
-          collapsed ? 'w-20' : 'w-64',
-          'md:relative'
+          collapsed ? 'w-20' : 'w-64'
         )}
       >
         <SidebarContent />

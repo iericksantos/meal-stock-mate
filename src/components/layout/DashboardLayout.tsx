@@ -39,7 +39,7 @@ export default function DashboardLayout({ children, requireAdmin = false }: Dash
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto md:ml-20">
         <div className="container mx-auto p-4 md:p-6 lg:p-8 pt-16 md:pt-6">
           {children}
         </div>
