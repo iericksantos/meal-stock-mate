@@ -26,8 +26,10 @@ import { useLanguage, Language } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrency, Currency, currencies } from '@/contexts/CurrencyContext';
 import { useAuth } from '@/hooks/useAuth';
-import { Globe, Palette, LogOut, Settings as SettingsIcon, Truck, Coins } from 'lucide-react';
+import { Globe, Palette, LogOut, Settings as SettingsIcon, Truck, Coins, Store, FileText } from 'lucide-react';
 import SupplierManagement from '@/components/SupplierManagement';
+import { CloseBarModal } from '@/components/CloseBarModal';
+import { ClosingHistoryModal } from '@/components/ClosingHistoryModal';
 
 const languages: { code: Language; name: string; flag: string }[] = [
   { code: 'pt-BR', name: 'Português (Brasil)', flag: '🇧🇷' },
@@ -39,9 +41,11 @@ export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { currency, setCurrency } = useCurrency();
-  const { signOut, isAdmin } = useAuth();
+  const { signOut, isAdmin, isHost } = useAuth();
   const navigate = useNavigate();
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [closeBarOpen, setCloseBarOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
@@ -66,6 +70,12 @@ export default function Settings() {
               <TabsTrigger value="suppliers" className="gap-2">
                 <Truck className="h-4 w-4" />
                 {t('settings.suppliers_tab')}
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="operations" className="gap-2">
+                <Store className="h-4 w-4" />
+                {t('settings.operations_tab')}
               </TabsTrigger>
             )}
           </TabsList>
@@ -224,8 +234,69 @@ export default function Settings() {
               <SupplierManagement />
             </TabsContent>
           )}
+
+          {isAdmin && (
+            <TabsContent value="operations" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Close Bar Card */}
+                <Card className="border-destructive/50">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+                        <Store className="h-5 w-5 text-destructive" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{t('close_bar.title')}</CardTitle>
+                        <CardDescription>{t('close_bar.description')}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      variant="destructive" 
+                      className="w-full"
+                      onClick={() => setCloseBarOpen(true)}
+                    >
+                      <Store className="mr-2 h-4 w-4" />
+                      {t('close_bar.button')}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Closing History Card - Only for Host */}
+                {isHost && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{t('close_bar.history_title')}</CardTitle>
+                          <CardDescription>{t('close_bar.history_desc')}</CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => setHistoryOpen(true)}
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        {t('close_bar.view_history')}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
+
+      <CloseBarModal open={closeBarOpen} onOpenChange={setCloseBarOpen} />
+      <ClosingHistoryModal open={historyOpen} onOpenChange={setHistoryOpen} />
     </DashboardLayout>
   );
 }

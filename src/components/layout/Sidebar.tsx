@@ -1,6 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, Language } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import {
   Package,
@@ -15,10 +15,10 @@ import {
   ShoppingCart,
   UtensilsCrossed,
   Utensils,
+  Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   Sheet,
@@ -26,7 +26,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog';
 
 const navItems = [
   {
@@ -85,12 +92,20 @@ const navItems = [
   },
 ];
 
+const languages: { code: Language; name: string; flag: string }[] = [
+  { code: 'pt-BR', name: 'Português', flag: '🇧🇷' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+];
+
 export default function Sidebar() {
   const { user, role, signOut } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const filteredNavItems = navItems.filter((item) =>
@@ -114,6 +129,17 @@ export default function Sidebar() {
       setMobileOpen(false);
     }
   };
+
+  const handleLogoutClick = () => {
+    setLogoutDialogOpen(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const currentLang = languages.find((l) => l.code === language);
 
   const SidebarContent = ({ inSheet = false }: { inSheet?: boolean }) => (
     <div className={cn(
@@ -174,7 +200,26 @@ export default function Sidebar() {
       {(inSheet || !collapsed) && (
         <div className="border-t border-sidebar-border p-4">
           <div className="flex items-center justify-center gap-2">
-            <LanguageSelector variant="compact" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 text-sidebar-foreground hover:bg-sidebar-accent">
+                  <Globe className="h-4 w-4" />
+                  <span>{currentLang?.flag}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="z-[100]">
+                {languages.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    className={language === lang.code ? 'bg-accent' : ''}
+                  >
+                    <span className="mr-2">{lang.flag}</span>
+                    {lang.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <ThemeToggle variant="compact" />
           </div>
         </div>
@@ -189,7 +234,7 @@ export default function Sidebar() {
           {(inSheet || !collapsed) && (
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-medium text-sidebar-foreground">{user?.email}</p>
-              <p className="text-xs text-sidebar-foreground/80 capitalize">
+              <p className="text-xs text-sidebar-foreground/70 capitalize">
                 {role || t('common.loading')}
               </p>
             </div>
@@ -201,7 +246,7 @@ export default function Sidebar() {
             'mt-3 w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             !inSheet && collapsed && 'px-0'
           )}
-          onClick={signOut}
+          onClick={handleLogoutClick}
         >
           <LogOut className="h-4 w-4" />
           {(inSheet || !collapsed) && <span className="ml-2">{t('nav.logout')}</span>}
@@ -248,6 +293,13 @@ export default function Sidebar() {
       >
         <SidebarContent />
       </aside>
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmDialog
+        open={logoutDialogOpen}
+        onOpenChange={setLogoutDialogOpen}
+        onConfirm={handleLogoutConfirm}
+      />
     </>
   );
 }
