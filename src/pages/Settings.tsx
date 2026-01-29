@@ -24,8 +24,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCurrency, Currency, currencies } from '@/contexts/CurrencyContext';
 import { useAuth } from '@/hooks/useAuth';
-import { Globe, Palette, LogOut, Settings as SettingsIcon, Truck } from 'lucide-react';
+import { Globe, Palette, LogOut, Settings as SettingsIcon, Truck, Coins } from 'lucide-react';
 import SupplierManagement from '@/components/SupplierManagement';
 
 const languages: { code: Language; name: string; flag: string }[] = [
@@ -37,6 +38,7 @@ const languages: { code: Language; name: string; flag: string }[] = [
 export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { currency, setCurrency } = useCurrency();
   const { signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -138,8 +140,40 @@ export default function Settings() {
                 </CardContent>
               </Card>
 
+              {/* Currency Card */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                      <Coins className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{t('settings.currency')}</CardTitle>
+                      <CardDescription>{t('settings.currency_desc')}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Select value={currency} onValueChange={(value: Currency) => setCurrency(value)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((curr) => (
+                        <SelectItem key={curr.code} value={curr.code}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{curr.symbol}</span>
+                            <span>{curr.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
               {/* Session Card */}
-              <Card className="md:col-span-2">
+              <Card>
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
