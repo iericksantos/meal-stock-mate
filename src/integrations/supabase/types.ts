@@ -378,6 +378,8 @@ export type Database = {
           movement_type: string
           new_expiry: string | null
           new_stock: number
+          order_id: string | null
+          order_item_id: string | null
           previous_expiry: string | null
           previous_stock: number | null
           reason: string | null
@@ -390,6 +392,8 @@ export type Database = {
           movement_type?: string
           new_expiry?: string | null
           new_stock: number
+          order_id?: string | null
+          order_item_id?: string | null
           previous_expiry?: string | null
           previous_stock?: number | null
           reason?: string | null
@@ -402,6 +406,8 @@ export type Database = {
           movement_type?: string
           new_expiry?: string | null
           new_stock?: number
+          order_id?: string | null
+          order_item_id?: string | null
           previous_expiry?: string | null
           previous_stock?: number | null
           reason?: string | null
@@ -412,6 +418,20 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_history_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
             referencedColumns: ["id"]
           },
         ]

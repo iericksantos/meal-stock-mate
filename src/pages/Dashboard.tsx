@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import ActiveOrdersSection from '@/components/ActiveOrdersSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, AlertTriangle, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
@@ -174,6 +175,9 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
+
+        {/* Active Orders Section */}
+        <ActiveOrdersSection />
 
         {/* Quick Info */}
         <Card>

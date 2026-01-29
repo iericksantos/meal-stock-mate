@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import BillReviewModal from '@/components/BillReviewModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -46,6 +47,7 @@ import {
   Trash2,
   Store,
   Settings2,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
@@ -137,6 +139,7 @@ export default function DiningRoom() {
   const [menuModalOpen, setMenuModalOpen] = useState(false);
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [closeOrderConfirmOpen, setCloseOrderConfirmOpen] = useState(false);
+  const [billReviewOpen, setBillReviewOpen] = useState(false);
   const [stockIssues, setStockIssues] = useState<StockIssue[]>([]);
   const [stockAlertOpen, setStockAlertOpen] = useState(false);
   const [counterOrderOpen, setCounterOrderOpen] = useState(false);
@@ -908,12 +911,15 @@ export default function DiningRoom() {
 
               <Button
                 size="lg"
-                variant="destructive"
+                variant="default"
                 className="h-14 w-full text-lg"
-                onClick={() => setCloseOrderConfirmOpen(true)}
+                onClick={() => {
+                  setOrderModalOpen(false);
+                  setBillReviewOpen(true);
+                }}
                 disabled={currentOrderItems.length === 0}
               >
-                <X className="mr-2 h-5 w-5" />
+                <CreditCard className="mr-2 h-5 w-5" />
                 {t('dining.close_order')}
               </Button>
             </div>
@@ -1083,6 +1089,22 @@ export default function DiningRoom() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Bill Review Modal */}
+        <BillReviewModal
+          open={billReviewOpen}
+          onOpenChange={setBillReviewOpen}
+          order={currentOrder}
+          orderItems={currentOrderItems}
+          tableNumber={selectedTable?.table_number}
+          waiterName={currentOrder ? getWaiterName(currentOrder.waiter_id) : ''}
+          onAddItem={() => {
+            setBillReviewOpen(false);
+            setMenuModalOpen(true);
+          }}
+          onClose={closeOrder}
+          onPrint={() => setPrintModalOpen(true)}
+        />
       </div>
 
       {/* Print Styles */}
