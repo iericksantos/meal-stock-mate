@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      bar_closings: {
+        Row: {
+          closed_at: string
+          closed_by: string
+          consumed_products: Json
+          created_at: string
+          expired_items: Json
+          id: string
+          notes: string | null
+          orders_summary: Json
+          sales_by_waiter: Json
+          total_orders: number
+          total_revenue: number
+        }
+        Insert: {
+          closed_at?: string
+          closed_by: string
+          consumed_products?: Json
+          created_at?: string
+          expired_items?: Json
+          id?: string
+          notes?: string | null
+          orders_summary?: Json
+          sales_by_waiter?: Json
+          total_orders?: number
+          total_revenue?: number
+        }
+        Update: {
+          closed_at?: string
+          closed_by?: string
+          consumed_products?: Json
+          created_at?: string
+          expired_items?: Json
+          id?: string
+          notes?: string | null
+          orders_summary?: Json
+          sales_by_waiter?: Json
+          total_orders?: number
+          total_revenue?: number
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
