@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatQuantity, formatQuantityChange } from '@/lib/formatNumber';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AuditDetailModal from '@/components/AuditDetailModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -161,8 +162,7 @@ export default function AuditHistory() {
   const calculateQuantityChange = (entry: StockHistoryEntry) => {
     const prev = entry.previous_stock ?? 0;
     const diff = entry.new_stock - prev;
-    const sign = diff >= 0 ? '+' : '';
-    return `${sign}${diff}`;
+    return formatQuantityChange(diff);
   };
 
   const filteredHistory = history.filter((entry) => {
@@ -296,7 +296,7 @@ export default function AuditHistory() {
                           {calculateQuantityChange(entry)}
                         </TableCell>
                         <TableCell className="font-semibold">
-                          {entry.new_stock}
+                          {formatQuantity(entry.new_stock)}
                         </TableCell>
                         <TableCell className="text-muted-foreground max-w-[200px] truncate">
                           <div className="flex items-center gap-2">

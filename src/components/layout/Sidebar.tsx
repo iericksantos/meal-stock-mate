@@ -188,8 +188,8 @@ export default function Sidebar() {
           </div>
           {(inSheet || !collapsed) && (
             <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium">{user?.email}</p>
-              <p className="text-xs text-sidebar-foreground/60 capitalize">
+              <p className="truncate text-sm font-medium text-sidebar-foreground">{user?.email}</p>
+              <p className="text-xs text-sidebar-foreground/80 capitalize">
                 {role || t('common.loading')}
               </p>
             </div>
@@ -242,7 +242,7 @@ export default function Sidebar() {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          'hidden md:flex h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 shrink-0',
+          'hidden md:flex sticky top-0 h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 shrink-0',
           collapsed ? 'w-20' : 'w-64'
         )}
       >

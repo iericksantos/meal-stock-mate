@@ -407,6 +407,19 @@ const translations: Record<Language, Record<string, string>> = {
     'audit.changed_by': 'Alterado por',
     'audit.sale_details': 'Detalhes da Venda',
     'audit.order_details_unavailable': 'Detalhes do pedido não disponíveis',
+
+    // Orders
+    'orders.detail_title': 'Detalhes do Pedido',
+    'orders.active': 'Ativo',
+    'orders.finished': 'Finalizado',
+    'orders.opened_at': 'Abertura',
+    'orders.closed_at': 'Fechamento',
+    'orders.duration': 'Permanência',
+    'orders.items': 'Itens',
+    'orders.total': 'Total',
+    'orders.reprint': 'Reimprimir Nota',
+    'dashboard.finished_orders': 'Pedidos Finalizados',
+    'dashboard.no_finished_orders': 'Nenhum pedido finalizado hoje',
   },
   'es': {
     // Auth
@@ -806,6 +819,19 @@ const translations: Record<Language, Record<string, string>> = {
     'audit.changed_by': 'Modificado por',
     'audit.sale_details': 'Detalles de la Venta',
     'audit.order_details_unavailable': 'Detalles del pedido no disponibles',
+
+    // Orders
+    'orders.detail_title': 'Detalles del Pedido',
+    'orders.active': 'Activo',
+    'orders.finished': 'Finalizado',
+    'orders.opened_at': 'Apertura',
+    'orders.closed_at': 'Cierre',
+    'orders.duration': 'Permanencia',
+    'orders.items': 'Ítems',
+    'orders.total': 'Total',
+    'orders.reprint': 'Reimprimir Ticket',
+    'dashboard.finished_orders': 'Pedidos Finalizados',
+    'dashboard.no_finished_orders': 'Ningún pedido finalizado hoy',
   },
   'en': {
     // Auth
@@ -1205,6 +1231,19 @@ const translations: Record<Language, Record<string, string>> = {
     'audit.changed_by': 'Changed by',
     'audit.sale_details': 'Sale Details',
     'audit.order_details_unavailable': 'Order details unavailable',
+
+    // Orders
+    'orders.detail_title': 'Order Details',
+    'orders.active': 'Active',
+    'orders.finished': 'Finished',
+    'orders.opened_at': 'Opened',
+    'orders.closed_at': 'Closed',
+    'orders.duration': 'Duration',
+    'orders.items': 'Items',
+    'orders.total': 'Total',
+    'orders.reprint': 'Reprint Receipt',
+    'dashboard.finished_orders': 'Finished Orders',
+    'dashboard.no_finished_orders': 'No finished orders today',
   },
 };
 

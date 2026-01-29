@@ -431,7 +431,7 @@ export default function DiningRoom() {
 
     try {
       // Add item to order
-      const { error: itemError } = await supabase
+      const { data: orderItem, error: itemError } = await supabase
         .from('order_items')
         .insert({
           order_id: currentOrder.id,
@@ -441,7 +441,9 @@ export default function DiningRoom() {
           unit_price: dish.price,
           status: 'pending',
           sent_at: new Date().toISOString(),
-        });
+        })
+        .select()
+        .single();
 
       if (itemError) throw itemError;
 
@@ -464,7 +466,7 @@ export default function DiningRoom() {
           })
           .eq('id', item.id);
 
-        // Record in stock history
+        // Record in stock history with order reference
         const orderLabel = currentOrder.table_id 
           ? `Mesa ${selectedTable?.table_number || '?'}` 
           : `Balcão - ${currentOrder.customer_name}`;
@@ -478,6 +480,8 @@ export default function DiningRoom() {
             changed_by: user.id,
             movement_type: 'withdrawal',
             reason: `${t('dining.sale_reason')}: ${dish.name} x${quantity} - ${orderLabel}`,
+            order_id: currentOrder.id,
+            order_item_id: orderItem.id,
           });
       }
 

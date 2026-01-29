@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { formatQuantity, formatQuantityChange } from '@/lib/formatNumber';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { format, parseISO } from 'date-fns';
 import { ptBR, es, enUS } from 'date-fns/locale';
-import { 
+import {
   ArrowDownCircle, 
   ArrowUpCircle, 
   RefreshCw, 
@@ -163,6 +164,7 @@ export default function AuditDetailModal({
 
   const quantityChange = entry.new_stock - (entry.previous_stock ?? 0);
   const isPositive = quantityChange >= 0;
+  const formattedChange = formatQuantityChange(quantityChange);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,7 +188,7 @@ export default function AuditDetailModal({
               <div className="flex items-center gap-2 mt-1">
                 {getMovementBadge(entry.movement_type)}
                 <span className={`font-bold ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                  {isPositive ? '+' : ''}{quantityChange}
+                  {formattedChange}
                 </span>
               </div>
             </div>
@@ -196,11 +198,11 @@ export default function AuditDetailModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 border rounded-lg text-center">
               <p className="text-xs text-muted-foreground">{t('audit.previous_stock')}</p>
-              <p className="text-lg font-bold">{entry.previous_stock ?? 0}</p>
+              <p className="text-lg font-bold">{formatQuantity(entry.previous_stock)}</p>
             </div>
             <div className="p-3 border rounded-lg text-center">
               <p className="text-xs text-muted-foreground">{t('audit.new_stock')}</p>
-              <p className="text-lg font-bold">{entry.new_stock}</p>
+              <p className="text-lg font-bold">{formatQuantity(entry.new_stock)}</p>
             </div>
           </div>
 

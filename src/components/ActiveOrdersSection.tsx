@@ -10,6 +10,7 @@ import { Clock, Store, UtensilsCrossed, ChevronRight, ShoppingBag } from 'lucide
 import { format, parseISO } from 'date-fns';
 import { ptBR, es, enUS } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import OrderDetailModal from '@/components/OrderDetailModal';
 
 interface Order {
   id: string;
@@ -17,8 +18,9 @@ interface Order {
   status: string;
   waiter_id: string;
   opened_at: string | null;
+  closed_at: string | null;
   created_at: string | null;
-  total: number;
+  total: number | null;
   guest_count: number | null;
   customer_name: string | null;
 }
@@ -50,6 +52,8 @@ export default function ActiveOrdersSection() {
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const getLocale = () => {
     switch (language) {
@@ -115,6 +119,11 @@ export default function ActiveOrdersSection() {
     return { type: 'counter', label: order.customer_name || 'Balcão', icon: Store };
   };
 
+  const handleOrderClick = (order: Order) => {
+    setSelectedOrder(order);
+    setDetailModalOpen(true);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -175,7 +184,8 @@ export default function ActiveOrdersSection() {
               return (
                 <div
                   key={order.id}
-                  className="rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                  className="rounded-lg border p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleOrderClick(order)}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -221,6 +231,12 @@ export default function ActiveOrdersSection() {
           </div>
         </ScrollArea>
       </CardContent>
+
+      <OrderDetailModal
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        order={selectedOrder}
+      />
     </Card>
   );
 }
