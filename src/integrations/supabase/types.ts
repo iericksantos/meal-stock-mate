@@ -266,6 +266,8 @@ export type Database = {
         Row: {
           closed_at: string | null
           created_at: string | null
+          customer_name: string | null
+          guest_count: number | null
           id: string
           opened_at: string | null
           status: string
@@ -277,6 +279,8 @@ export type Database = {
         Insert: {
           closed_at?: string | null
           created_at?: string | null
+          customer_name?: string | null
+          guest_count?: number | null
           id?: string
           opened_at?: string | null
           status?: string
@@ -288,6 +292,8 @@ export type Database = {
         Update: {
           closed_at?: string | null
           created_at?: string | null
+          customer_name?: string | null
+          guest_count?: number | null
           id?: string
           opened_at?: string | null
           status?: string
