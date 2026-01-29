@@ -242,7 +242,7 @@ export default function Sidebar() {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          'hidden md:flex fixed left-0 top-0 z-40 h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300',
+          'hidden md:flex h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 shrink-0',
           collapsed ? 'w-20' : 'w-64'
         )}
       >
