@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import BillReviewModal from '@/components/BillReviewModal';
+import TableManagementModal from '@/components/TableManagementModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -118,7 +119,7 @@ interface Profile {
 }
 
 export default function DiningRoom() {
-  const { user } = useAuth();
+  const { user, isAdmin, isHost, isSuperAdmin } = useAuth();
   const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
   const { toast } = useToast();
@@ -143,6 +144,7 @@ export default function DiningRoom() {
   const [stockIssues, setStockIssues] = useState<StockIssue[]>([]);
   const [stockAlertOpen, setStockAlertOpen] = useState(false);
   const [counterOrderOpen, setCounterOrderOpen] = useState(false);
+  const [tableManagementOpen, setTableManagementOpen] = useState(false);
 
   // Table options state
   const [tableStatus, setTableStatus] = useState<string>('free');
@@ -639,14 +641,28 @@ export default function DiningRoom() {
             <h1 className="text-2xl font-bold md:text-3xl">{t('dining.title')}</h1>
             <p className="mt-1 text-muted-foreground">{t('dining.subtitle')}</p>
           </div>
-          <Button 
-            size="lg" 
-            className="h-14 text-lg gap-2"
-            onClick={() => setCounterOrderOpen(true)}
-          >
-            <Store className="h-5 w-5" />
-            {t('dining.new_counter_order')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {/* Manage Tables button - visible only to host/super_admin */}
+            {(isHost || isSuperAdmin) && (
+              <Button 
+                variant="outline"
+                size="lg" 
+                className="h-14 text-lg gap-2"
+                onClick={() => setTableManagementOpen(true)}
+              >
+                <Settings2 className="h-5 w-5" />
+                {t('dining.manage_tables')}
+              </Button>
+            )}
+            <Button 
+              size="lg" 
+              className="h-14 text-lg gap-2"
+              onClick={() => setCounterOrderOpen(true)}
+            >
+              <Store className="h-5 w-5" />
+              {t('dining.new_counter_order')}
+            </Button>
+          </div>
         </div>
 
         {/* Counter Orders (Takeaway) */}
@@ -1108,6 +1124,13 @@ export default function DiningRoom() {
           }}
           onClose={closeOrder}
           onPrint={() => setPrintModalOpen(true)}
+        />
+
+        {/* Table Management Modal */}
+        <TableManagementModal
+          open={tableManagementOpen}
+          onOpenChange={setTableManagementOpen}
+          onTablesUpdated={fetchData}
         />
       </div>
 
