@@ -214,6 +214,9 @@ const translations: Record<Language, Record<string, string>> = {
     'clients.deleted': 'Cliente removido!',
     'clients.delete_error': 'Erro ao excluir cliente',
     'clients.load_error': 'Erro ao carregar clientes',
+    'clients.subordinates': 'Subordinados',
+    'clients.no_subordinates': 'Nenhum subordinado cadastrado',
+    'clients.hosts_without_restaurant': 'Hosts sem restaurante vinculado',
 
     // Withdrawal
     'withdrawal.title': 'Baixa de Estoque',
@@ -715,6 +718,9 @@ const translations: Record<Language, Record<string, string>> = {
     'clients.deleted': '¡Cliente eliminado!',
     'clients.delete_error': 'Error al eliminar cliente',
     'clients.load_error': 'Error al cargar clientes',
+    'clients.subordinates': 'Subordinados',
+    'clients.no_subordinates': 'Ningún subordinado registrado',
+    'clients.hosts_without_restaurant': 'Hosts sin restaurante vinculado',
 
     // Withdrawal
     'withdrawal.title': 'Baja de Stock',
@@ -1216,6 +1222,9 @@ const translations: Record<Language, Record<string, string>> = {
     'clients.deleted': 'Client removed!',
     'clients.delete_error': 'Error deleting client',
     'clients.load_error': 'Error loading clients',
+    'clients.subordinates': 'Subordinates',
+    'clients.no_subordinates': 'No subordinates registered',
+    'clients.hosts_without_restaurant': 'Hosts without linked restaurant',
 
     // Withdrawal
     'withdrawal.title': 'Stock Withdrawal',

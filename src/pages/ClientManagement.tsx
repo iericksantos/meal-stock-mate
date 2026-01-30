@@ -29,13 +29,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, UserPlus, Trash2, Pencil, AlertCircle } from 'lucide-react';
+import { Building2, UserPlus, Trash2, Pencil, AlertCircle, ChevronDown, ChevronRight, Users } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR, es, enUS } from 'date-fns/locale';
 
 type RestaurantStatus = 'active' | 'pending_payment' | 'suspended';
+
+interface Subordinate {
+  user_id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
 
 interface Restaurant {
   id: string;
@@ -45,6 +58,14 @@ interface Restaurant {
   owner_email?: string;
   status: RestaurantStatus;
   created_at: string;
+  subordinates?: Subordinate[];
+}
+
+interface HostWithoutRestaurant {
+  user_id: string;
+  full_name: string;
+  email: string;
+  created_at: string;
 }
 
 export default function ClientManagement() {
@@ -52,11 +73,14 @@ export default function ClientManagement() {
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [hostsWithoutRestaurant, setHostsWithoutRestaurant] = useState<HostWithoutRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [expandedRestaurants, setExpandedRestaurants] = useState<Set<string>>(new Set());
+  const [loadingSubordinates, setLoadingSubordinates] = useState<Set<string>>(new Set());
 
   const [newRestaurant, setNewRestaurant] = useState({
     name: '',
@@ -73,6 +97,17 @@ export default function ClientManagement() {
     }
   };
 
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <Badge variant="secondary">{t('common.admin')}</Badge>;
+      case 'staff':
+        return <Badge variant="outline">{t('common.staff')}</Badge>;
+      default:
+        return <Badge variant="secondary">{role}</Badge>;
+    }
+  };
+
   const getStatusBadge = (status: RestaurantStatus) => {
     switch (status) {
       case 'active':
@@ -86,28 +121,41 @@ export default function ClientManagement() {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      fetchRestaurants();
+      fetchRestaurantsAndHosts();
     }
   }, [isSuperAdmin]);
 
-  const fetchRestaurants = async () => {
+  const fetchRestaurantsAndHosts = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch all restaurants
+      const { data: restaurantsData, error: restaurantsError } = await supabase
         .from('restaurants')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (restaurantsError) throw restaurantsError;
 
-      // Fetch owner profiles
-      const ownerIds = data?.map(r => r.owner_id) || [];
-      const { data: profiles } = await supabase
+      // Fetch all hosts from user_roles
+      const { data: hostRoles, error: hostRolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, created_at')
+        .eq('role', 'host');
+
+      if (hostRolesError) throw hostRolesError;
+
+      const hostUserIds = hostRoles?.map(r => r.user_id) || [];
+
+      // Fetch profiles for all hosts
+      const { data: hostProfiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, email')
-        .in('user_id', ownerIds);
+        .select('user_id, full_name, email, restaurant_id, created_at')
+        .in('user_id', hostUserIds);
 
-      const restaurantsWithOwners: Restaurant[] = (data || []).map(restaurant => {
-        const ownerProfile = profiles?.find(p => p.user_id === restaurant.owner_id);
+      if (profilesError) throw profilesError;
+
+      // Map restaurants with owner info
+      const restaurantsWithOwners: Restaurant[] = (restaurantsData || []).map(restaurant => {
+        const ownerProfile = hostProfiles?.find(p => p.user_id === restaurant.owner_id);
         return {
           ...restaurant,
           status: restaurant.status as RestaurantStatus,
@@ -116,9 +164,20 @@ export default function ClientManagement() {
         };
       });
 
+      // Find hosts without restaurant
+      const hostsWithoutRest: HostWithoutRestaurant[] = (hostProfiles || [])
+        .filter(profile => !profile.restaurant_id && !restaurantsData?.some(r => r.owner_id === profile.user_id))
+        .map(profile => ({
+          user_id: profile.user_id,
+          full_name: profile.full_name,
+          email: profile.email || 'Sem email',
+          created_at: profile.created_at || new Date().toISOString(),
+        }));
+
       setRestaurants(restaurantsWithOwners);
+      setHostsWithoutRestaurant(hostsWithoutRest);
     } catch (error) {
-      console.error('Error fetching restaurants:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: t('clients.load_error'),
         variant: 'destructive',
@@ -126,6 +185,83 @@ export default function ClientManagement() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchSubordinates = async (restaurantId: string) => {
+    setLoadingSubordinates(prev => new Set(prev).add(restaurantId));
+    
+    try {
+      // Fetch all profiles for this restaurant (excluding host)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email, created_at')
+        .eq('restaurant_id', restaurantId);
+
+      if (profilesError) throw profilesError;
+
+      if (!profiles || profiles.length === 0) {
+        setRestaurants(prev => prev.map(r => 
+          r.id === restaurantId ? { ...r, subordinates: [] } : r
+        ));
+        return;
+      }
+
+      // Fetch roles for these users
+      const userIds = profiles.map(p => p.user_id);
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds);
+
+      if (rolesError) throw rolesError;
+
+      // Combine profiles with roles, excluding hosts
+      const subordinates: Subordinate[] = profiles
+        .map(profile => {
+          const userRole = roles?.find(r => r.user_id === profile.user_id);
+          return {
+            user_id: profile.user_id,
+            full_name: profile.full_name,
+            email: profile.email || 'Sem email',
+            role: userRole?.role || 'staff',
+            created_at: profile.created_at || new Date().toISOString(),
+          };
+        })
+        .filter(sub => sub.role !== 'host' && sub.role !== 'super_admin');
+
+      setRestaurants(prev => prev.map(r => 
+        r.id === restaurantId ? { ...r, subordinates } : r
+      ));
+    } catch (error) {
+      console.error('Error fetching subordinates:', error);
+      toast({
+        title: t('common.error'),
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingSubordinates(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(restaurantId);
+        return newSet;
+      });
+    }
+  };
+
+  const toggleRestaurantExpand = async (restaurantId: string) => {
+    const newExpanded = new Set(expandedRestaurants);
+    
+    if (newExpanded.has(restaurantId)) {
+      newExpanded.delete(restaurantId);
+    } else {
+      newExpanded.add(restaurantId);
+      // Fetch subordinates if not already loaded
+      const restaurant = restaurants.find(r => r.id === restaurantId);
+      if (restaurant && !restaurant.subordinates) {
+        await fetchSubordinates(restaurantId);
+      }
+    }
+    
+    setExpandedRestaurants(newExpanded);
   };
 
   const handleCreateRestaurant = async () => {
@@ -175,7 +311,7 @@ export default function ClientManagement() {
       toast({ title: t('clients.created_success') });
       setNewRestaurant({ name: '', owner_email: '', owner_password: '', owner_name: '' });
       setModalOpen(false);
-      fetchRestaurants();
+      fetchRestaurantsAndHosts();
     } catch (error: unknown) {
       console.error('Error creating restaurant:', error);
       const message = error instanceof Error ? error.message : '';
@@ -199,7 +335,7 @@ export default function ClientManagement() {
       if (error) throw error;
 
       toast({ title: t('clients.status_updated') });
-      fetchRestaurants();
+      fetchRestaurantsAndHosts();
       setEditModalOpen(false);
     } catch (error) {
       console.error('Error updating status:', error);
@@ -222,7 +358,7 @@ export default function ClientManagement() {
       if (error) throw error;
 
       toast({ title: t('clients.deleted') });
-      fetchRestaurants();
+      fetchRestaurantsAndHosts();
     } catch (error) {
       console.error('Error deleting restaurant:', error);
       toast({
@@ -326,6 +462,27 @@ export default function ClientManagement() {
           </Dialog>
         </div>
 
+        {/* Hosts without restaurant warning */}
+        {hostsWithoutRestaurant.length > 0 && (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                {t('clients.hosts_without_restaurant')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-1">
+                {hostsWithoutRestaurant.map((host) => (
+                  <li key={host.user_id} className="text-sm text-muted-foreground">
+                    • {host.full_name} ({host.email})
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Restaurants Table */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -353,6 +510,7 @@ export default function ClientManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-table-header">
+                      <TableHead className="w-[40px]"></TableHead>
                       <TableHead className="font-semibold">{t('clients.restaurant_name')}</TableHead>
                       <TableHead className="font-semibold">{t('clients.owner')}</TableHead>
                       <TableHead className="font-semibold">{t('table.status')}</TableHead>
@@ -362,56 +520,117 @@ export default function ClientManagement() {
                   </TableHeader>
                   <TableBody>
                     {restaurants.map((restaurant, index) => (
-                      <TableRow
-                        key={restaurant.id}
-                        className={index % 2 === 1 ? 'bg-table-row-alt' : ''}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium uppercase text-primary">
-                              {restaurant.name.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="font-medium">{restaurant.name}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{restaurant.owner_name}</p>
-                            <p className="text-sm text-muted-foreground">{restaurant.owner_email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(restaurant.status as RestaurantStatus)}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {format(parseISO(restaurant.created_at), "dd 'de' MMMM 'de' yyyy", {
-                            locale: getDateLocale(),
-                          })}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedRestaurant(restaurant);
-                                setEditModalOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteRestaurant(restaurant.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                      <Collapsible key={restaurant.id} asChild open={expandedRestaurants.has(restaurant.id)}>
+                        <>
+                          <TableRow className={index % 2 === 1 ? 'bg-table-row-alt' : ''}>
+                            <TableCell>
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => toggleRestaurantExpand(restaurant.id)}
+                                >
+                                  {loadingSubordinates.has(restaurant.id) ? (
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                  ) : expandedRestaurants.has(restaurant.id) ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </CollapsibleTrigger>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium uppercase text-primary">
+                                  {restaurant.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-medium">{restaurant.name}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{restaurant.owner_name}</p>
+                                <p className="text-sm text-muted-foreground">{restaurant.owner_email}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {getStatusBadge(restaurant.status as RestaurantStatus)}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {format(parseISO(restaurant.created_at), "dd 'de' MMMM 'de' yyyy", {
+                                locale: getDateLocale(),
+                              })}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedRestaurant(restaurant);
+                                    setEditModalOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteRestaurant(restaurant.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <CollapsibleContent asChild>
+                            <TableRow className="bg-muted/30">
+                              <TableCell colSpan={6} className="p-0">
+                                <div className="p-4 pl-12">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-medium text-sm">{t('clients.subordinates')}</span>
+                                  </div>
+                                  {restaurant.subordinates?.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground italic">
+                                      {t('clients.no_subordinates')}
+                                    </p>
+                                  ) : (
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead className="text-xs">{t('users.name')}</TableHead>
+                                          <TableHead className="text-xs">{t('users.email')}</TableHead>
+                                          <TableHead className="text-xs">{t('users.role')}</TableHead>
+                                          <TableHead className="text-xs">{t('clients.created_at')}</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {restaurant.subordinates?.map((sub) => (
+                                          <TableRow key={sub.user_id}>
+                                            <TableCell className="text-sm">{sub.full_name}</TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">{sub.email}</TableCell>
+                                            <TableCell>{getRoleBadge(sub.role)}</TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">
+                                              {format(parseISO(sub.created_at), 'dd/MM/yyyy', {
+                                                locale: getDateLocale(),
+                                              })}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          </CollapsibleContent>
+                        </>
+                      </Collapsible>
                     ))}
                   </TableBody>
                 </Table>
