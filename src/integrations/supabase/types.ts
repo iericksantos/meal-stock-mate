@@ -750,6 +750,7 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_host: { Args: { _user_id: string }; Returns: boolean }
+      is_kitchen: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       same_restaurant: {
         Args: { _restaurant_id: string; _user_id: string }
@@ -757,7 +758,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "staff" | "host" | "super_admin"
+      app_role: "admin" | "staff" | "host" | "super_admin" | "cozinha"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -885,7 +886,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff", "host", "super_admin"],
+      app_role: ["admin", "staff", "host", "super_admin", "cozinha"],
     },
   },
 } as const

@@ -11,7 +11,7 @@ interface CreateUserRequest {
   password: string;
   full_name: string;
   whatsapp?: string;
-  role: "super_admin" | "host" | "admin" | "staff";
+  role: "super_admin" | "host" | "admin" | "staff" | "cozinha";
 }
 
 serve(async (req) => {
@@ -91,9 +91,9 @@ serve(async (req) => {
       );
     }
 
-    if (!["super_admin", "host", "admin", "staff"].includes(role)) {
+    if (!["super_admin", "host", "admin", "staff", "cozinha"].includes(role)) {
       return new Response(
-        JSON.stringify({ error: "Role must be 'super_admin', 'host', 'admin' or 'staff'" }),
+        JSON.stringify({ error: "Role must be 'super_admin', 'host', 'admin', 'staff' or 'cozinha'" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
