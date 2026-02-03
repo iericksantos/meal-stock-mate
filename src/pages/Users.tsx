@@ -32,11 +32,11 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Users as UsersIcon, Trash2, Shield, User, Crown, Pencil } from 'lucide-react';
+import { UserPlus, Users as UsersIcon, Trash2, Shield, User, Crown, Pencil, ChefHat } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR, es, enUS } from 'date-fns/locale';
 
-type AppRole = 'super_admin' | 'host' | 'admin' | 'staff';
+type AppRole = 'super_admin' | 'host' | 'admin' | 'staff' | 'cozinha';
 
 interface UserWithRole {
   id: string;
@@ -118,10 +118,10 @@ export default function Users() {
   // Get available roles based on current user's role
   const getAvailableRolesForCreation = (): AppRole[] => {
     if (currentUserRole === 'host') {
-      return ['host', 'admin', 'staff'];
+      return ['host', 'admin', 'staff', 'cozinha'];
     }
     if (currentUserRole === 'admin') {
-      return ['staff'];
+      return ['staff', 'cozinha'];
     }
     return [];
   };
@@ -274,6 +274,8 @@ export default function Users() {
         return <Crown className="mr-1 h-3 w-3" />;
       case 'admin':
         return <Shield className="mr-1 h-3 w-3" />;
+      case 'cozinha':
+        return <ChefHat className="mr-1 h-3 w-3" />;
       default:
         return <User className="mr-1 h-3 w-3" />;
     }
@@ -357,6 +359,14 @@ export default function Users() {
                           {t('users.staff_desc')}
                         </div>
                       </SelectItem>
+                      {availableRoles.includes('cozinha') && (
+                        <SelectItem value="cozinha">
+                          <div className="flex items-center gap-2">
+                            <ChefHat className="h-4 w-4" />
+                            {t('users.cozinha_desc')}
+                          </div>
+                        </SelectItem>
+                      )}
                       {availableRoles.includes('admin') && (
                         <SelectItem value="admin">
                           <div className="flex items-center gap-2">

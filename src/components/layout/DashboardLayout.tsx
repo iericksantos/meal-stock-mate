@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigationGuard } from '@/hooks/useNavigationGuard';
 import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog';
@@ -12,8 +12,9 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children, requireAdmin = false }: DashboardLayoutProps) {
-  const { user, loading, isAdmin, signOut } = useAuth();
+  const { user, loading, isAdmin, isKitchen, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleLogoutAttempt = useCallback(() => {
@@ -35,7 +36,11 @@ export default function DashboardLayout({ children, requireAdmin = false }: Dash
     if (!loading && requireAdmin && !isAdmin) {
       navigate('/dashboard');
     }
-  }, [user, loading, isAdmin, requireAdmin, navigate]);
+    // Redirect kitchen users to kitchen panel if they try to access other pages
+    if (!loading && isKitchen && location.pathname !== '/kitchen') {
+      navigate('/kitchen');
+    }
+  }, [user, loading, isAdmin, isKitchen, requireAdmin, navigate, location.pathname]);
 
   if (loading) {
     return (

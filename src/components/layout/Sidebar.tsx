@@ -17,6 +17,7 @@ import {
   Utensils,
   Globe,
   Building2,
+  ChefHat,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -42,6 +43,12 @@ const navItems = [
     href: '/clients',
     icon: Building2,
     roles: ['super_admin'],
+  },
+  {
+    titleKey: 'nav.kitchen',
+    href: '/kitchen',
+    icon: ChefHat,
+    roles: ['cozinha'],
   },
   {
     titleKey: 'nav.dashboard',

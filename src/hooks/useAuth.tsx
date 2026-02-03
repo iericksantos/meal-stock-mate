@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'super_admin' | 'host' | 'admin' | 'staff';
+type AppRole = 'super_admin' | 'host' | 'admin' | 'staff' | 'cozinha';
 
 interface AuthContextType {
   user: User | null;
@@ -15,6 +15,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isHost: boolean;
   isSuperAdmin: boolean;
+  isKitchen: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -132,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: role === 'admin' || role === 'host' || role === 'super_admin',
         isHost: role === 'host' || role === 'super_admin',
         isSuperAdmin: role === 'super_admin',
+        isKitchen: role === 'cozinha',
       }}
     >
       {children}

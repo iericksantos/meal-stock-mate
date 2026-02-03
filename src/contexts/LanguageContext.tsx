@@ -128,6 +128,7 @@ const translations: Record<Language, Record<string, string>> = {
     'users.staff_desc': 'Staff - Pode preencher estoque',
     'users.admin_desc': 'Admin - Gerencia funcionários',
     'users.host_desc': 'Host - Acesso total ao sistema',
+    'users.cozinha_desc': 'Cozinha - Acesso apenas ao painel de preparo',
     'users.create_user': 'Criar Usuário',
     'users.creating': 'Criando...',
     'users.no_users': 'Nenhum usuário',
@@ -525,6 +526,40 @@ const translations: Record<Language, Record<string, string>> = {
     'close_bar.load_error': 'Erro ao carregar histórico',
     'close_bar.no_history': 'Nenhum fechamento registrado',
     'close_bar.back_to_list': 'Voltar à lista',
+
+    // Kitchen Panel
+    'nav.kitchen': 'Painel de Preparo',
+    'kitchen.title': 'Painel de Preparo',
+    'kitchen.subtitle': 'Gerencie os pedidos da cozinha em tempo real',
+    'kitchen.load_error': 'Erro ao carregar pedidos',
+    'kitchen.no_orders': 'Nenhum pedido pendente',
+    'kitchen.no_orders_desc': 'Os novos pedidos aparecerão aqui automaticamente',
+    'kitchen.pending_items': 'itens pendentes',
+    'kitchen.item_ready': 'Item marcado como pronto!',
+    'kitchen.order_ready': 'Pedido marcado como pronto!',
+    'kitchen.update_error': 'Erro ao atualizar status',
+    'kitchen.mark_all_ready': 'Tudo Pronto',
+
+    // POS Interface
+    'pos.add_items_desc': 'Adicione itens ao pedido',
+    'pos.current_total': 'Total atual',
+    'pos.search_products': 'Buscar produtos...',
+    'pos.all': 'Todos',
+    'pos.dishes': 'Pratos',
+    'pos.drinks': 'Bebidas',
+    'pos.no_products': 'Nenhum produto encontrado',
+    'pos.cart': 'Carrinho',
+    'pos.cart_empty': 'Carrinho vazio',
+    'pos.subtotal': 'Subtotal',
+    'pos.new_total': 'Novo Total',
+    'pos.send_to_kitchen': 'Enviar para Cozinha',
+    'pos.sending': 'Enviando...',
+    'pos.sent_to_kitchen': 'Pedido enviado para a cozinha!',
+    'pos.send_error': 'Erro ao enviar pedido',
+    'pos.direct_sale': 'Venda direta',
+
+    // Common - Kitchen role
+    'common.cozinha': 'Cozinha',
   },
   'es': {
     // Auth
@@ -645,6 +680,7 @@ const translations: Record<Language, Record<string, string>> = {
     'users.staff_desc': 'Staff - Puede registrar inventario',
     'users.admin_desc': 'Admin - Gestiona empleados',
     'users.host_desc': 'Host - Acceso total al sistema',
+    'users.cozinha_desc': 'Cocina - Solo acceso al panel de preparación',
     'users.create_user': 'Crear Usuario',
     'users.creating': 'Creando...',
     'users.no_users': 'Sin usuarios',
@@ -1042,6 +1078,40 @@ const translations: Record<Language, Record<string, string>> = {
     'close_bar.load_error': 'Error al cargar historial',
     'close_bar.no_history': 'Ningún cierre registrado',
     'close_bar.back_to_list': 'Volver a la lista',
+
+    // Kitchen Panel
+    'nav.kitchen': 'Panel de Preparación',
+    'kitchen.title': 'Panel de Preparación',
+    'kitchen.subtitle': 'Gestione los pedidos de cocina en tiempo real',
+    'kitchen.load_error': 'Error al cargar pedidos',
+    'kitchen.no_orders': 'Ningún pedido pendiente',
+    'kitchen.no_orders_desc': 'Los nuevos pedidos aparecerán aquí automáticamente',
+    'kitchen.pending_items': 'ítems pendientes',
+    'kitchen.item_ready': '¡Ítem marcado como listo!',
+    'kitchen.order_ready': '¡Pedido marcado como listo!',
+    'kitchen.update_error': 'Error al actualizar estado',
+    'kitchen.mark_all_ready': 'Todo Listo',
+
+    // POS Interface
+    'pos.add_items_desc': 'Agregue ítems al pedido',
+    'pos.current_total': 'Total actual',
+    'pos.search_products': 'Buscar productos...',
+    'pos.all': 'Todos',
+    'pos.dishes': 'Platos',
+    'pos.drinks': 'Bebidas',
+    'pos.no_products': 'Ningún producto encontrado',
+    'pos.cart': 'Carrito',
+    'pos.cart_empty': 'Carrito vacío',
+    'pos.subtotal': 'Subtotal',
+    'pos.new_total': 'Nuevo Total',
+    'pos.send_to_kitchen': 'Enviar a Cocina',
+    'pos.sending': 'Enviando...',
+    'pos.sent_to_kitchen': '¡Pedido enviado a la cocina!',
+    'pos.send_error': 'Error al enviar pedido',
+    'pos.direct_sale': 'Venta directa',
+
+    // Common - Kitchen role
+    'common.cozinha': 'Cocina',
   },
   'en': {
     // Auth
@@ -1163,6 +1233,7 @@ const translations: Record<Language, Record<string, string>> = {
     'users.staff_desc': 'Staff - Can enter stock',
     'users.admin_desc': 'Admin - Manages employees',
     'users.host_desc': 'Host - Full system access',
+    'users.cozinha_desc': 'Kitchen - Only access to preparation panel',
     'users.create_user': 'Create User',
     'users.creating': 'Creating...',
     'users.no_users': 'No users',
@@ -1559,6 +1630,40 @@ const translations: Record<Language, Record<string, string>> = {
     'close_bar.load_error': 'Error loading history',
     'close_bar.no_history': 'No closings recorded',
     'close_bar.back_to_list': 'Back to list',
+
+    // Kitchen Panel
+    'nav.kitchen': 'Kitchen Panel',
+    'kitchen.title': 'Kitchen Panel',
+    'kitchen.subtitle': 'Manage kitchen orders in real-time',
+    'kitchen.load_error': 'Error loading orders',
+    'kitchen.no_orders': 'No pending orders',
+    'kitchen.no_orders_desc': 'New orders will appear here automatically',
+    'kitchen.pending_items': 'pending items',
+    'kitchen.item_ready': 'Item marked as ready!',
+    'kitchen.order_ready': 'Order marked as ready!',
+    'kitchen.update_error': 'Error updating status',
+    'kitchen.mark_all_ready': 'All Ready',
+
+    // POS Interface
+    'pos.add_items_desc': 'Add items to the order',
+    'pos.current_total': 'Current total',
+    'pos.search_products': 'Search products...',
+    'pos.all': 'All',
+    'pos.dishes': 'Dishes',
+    'pos.drinks': 'Drinks',
+    'pos.no_products': 'No products found',
+    'pos.cart': 'Cart',
+    'pos.cart_empty': 'Cart is empty',
+    'pos.subtotal': 'Subtotal',
+    'pos.new_total': 'New Total',
+    'pos.send_to_kitchen': 'Send to Kitchen',
+    'pos.sending': 'Sending...',
+    'pos.sent_to_kitchen': 'Order sent to the kitchen!',
+    'pos.send_error': 'Error sending order',
+    'pos.direct_sale': 'Direct sale',
+
+    // Common - Kitchen role
+    'common.cozinha': 'Kitchen',
   },
 };
 

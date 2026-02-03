@@ -6,6 +6,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import BillReviewModal from '@/components/BillReviewModal';
 import TableManagementModal from '@/components/TableManagementModal';
+import POSInterface from '@/components/POSInterface';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -145,6 +146,7 @@ export default function DiningRoom() {
   const [stockAlertOpen, setStockAlertOpen] = useState(false);
   const [counterOrderOpen, setCounterOrderOpen] = useState(false);
   const [tableManagementOpen, setTableManagementOpen] = useState(false);
+  const [posInterfaceOpen, setPosInterfaceOpen] = useState(false);
 
   // Table options state
   const [tableStatus, setTableStatus] = useState<string>('free');
@@ -912,7 +914,10 @@ export default function DiningRoom() {
                 <Button
                   size="lg"
                   className="h-14 text-lg"
-                  onClick={() => setMenuModalOpen(true)}
+                  onClick={() => {
+                    setOrderModalOpen(false);
+                    setPosInterfaceOpen(true);
+                  }}
                 >
                   <Plus className="mr-2 h-5 w-5" />
                   {t('dining.add_item')}
@@ -1132,6 +1137,38 @@ export default function DiningRoom() {
           onOpenChange={setTableManagementOpen}
           onTablesUpdated={fetchData}
         />
+
+        {/* POS Interface */}
+        {currentOrder && (
+          <POSInterface
+            open={posInterfaceOpen}
+            onClose={() => setPosInterfaceOpen(false)}
+            orderId={currentOrder.id}
+            orderLabel={getOrderLabel()}
+            tableId={selectedTable?.id || null}
+            onOrderUpdated={() => {
+              fetchData();
+              // Refresh current order items
+              supabase
+                .from('order_items')
+                .select('*')
+                .eq('order_id', currentOrder.id)
+                .then(({ data }) => {
+                  if (data) setCurrentOrderItems(data);
+                });
+              supabase
+                .from('orders')
+                .select('*')
+                .eq('id', currentOrder.id)
+                .single()
+                .then(({ data }) => {
+                  if (data) setCurrentOrder(data);
+                });
+            }}
+            existingItems={currentOrderItems}
+            currentTotal={currentOrder.total || 0}
+          />
+        )}
       </div>
 
       {/* Print Styles */}
