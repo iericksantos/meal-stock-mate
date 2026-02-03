@@ -2,11 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Loader2, AlertCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Package, Loader2, AlertCircle, Mail, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -17,6 +25,10 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const { signIn, user, loading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -59,6 +71,44 @@ export default function Auth() {
 
     navigate('/dashboard');
     setIsLoading(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast({
+        title: t('auth.fill_all_fields'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setResetSent(true);
+    } catch (error) {
+      console.error('Reset password error:', error);
+      toast({
+        title: t('auth.reset_error'),
+        variant: 'destructive',
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleCloseForgotPassword = () => {
+    setShowForgotPassword(false);
+    setResetEmail('');
+    setResetSent(false);
   };
 
   return (
@@ -132,14 +182,15 @@ export default function Auth() {
               </Button>
             </form>
 
-            <div className="mt-6 rounded-md bg-muted p-4">
-              <p className="text-sm text-muted-foreground">
-                <strong>{t('auth.test_users')}</strong>
-              </p>
-              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                <li>Admin: admin@gmail.com / admin</li>
-                <li>Staff: staff@gmail.com / staff</li>
-              </ul>
+            <div className="mt-4 text-center">
+              <Button
+                type="button"
+                variant="link"
+                className="text-sm text-muted-foreground hover:text-primary"
+                onClick={() => setShowForgotPassword(true)}
+              >
+                {t('auth.forgot_password')}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -149,6 +200,66 @@ export default function Auth() {
       <footer className="flex items-center justify-center gap-4 border-t p-4">
         <LanguageSelector />
       </footer>
+
+      {/* Forgot Password Modal */}
+      <Dialog open={showForgotPassword} onOpenChange={handleCloseForgotPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('auth.forgot_password_title')}</DialogTitle>
+            <DialogDescription>
+              {t('auth.forgot_password_desc')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {resetSent ? (
+            <div className="flex flex-col items-center gap-4 py-6">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <CheckCircle className="h-8 w-8 text-primary" />
+              </div>
+              <div className="text-center">
+                <h3 className="font-medium">{t('auth.reset_sent')}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t('auth.reset_sent_desc')}
+                </p>
+              </div>
+              <Button onClick={handleCloseForgotPassword} className="mt-4">
+                {t('common.close')}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="resetEmail">{t('auth.email')}</Label>
+                <Input
+                  id="resetEmail"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  disabled={resetLoading}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={handleResetPassword}
+                disabled={resetLoading}
+              >
+                {resetLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    {t('auth.send_reset_link')}
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

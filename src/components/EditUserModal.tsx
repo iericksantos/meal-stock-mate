@@ -27,6 +27,7 @@ interface UserToEdit {
   id: string;
   email: string;
   full_name: string;
+  whatsapp?: string;
   role: AppRole;
 }
 
@@ -52,6 +53,7 @@ export default function EditUserModal({
     full_name: '',
     email: '',
     password: '',
+    whatsapp: '',
     role: 'staff' as AppRole,
   });
 
@@ -62,6 +64,7 @@ export default function EditUserModal({
         full_name: user.full_name,
         email: user.email,
         password: '',
+        whatsapp: user.whatsapp || '',
         role: user.role,
       });
     }
@@ -100,6 +103,7 @@ export default function EditUserModal({
           full_name: formData.full_name,
           email: formData.email !== user.email ? formData.email : undefined,
           password: formData.password || undefined,
+          whatsapp: formData.whatsapp,
           role: formData.role !== user.role ? formData.role : undefined,
         },
       });
@@ -186,6 +190,19 @@ export default function EditUserModal({
                 setFormData({ ...formData, password: e.target.value })
               }
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="editWhatsapp">{t('profile.whatsapp')}</Label>
+            <Input
+              id="editWhatsapp"
+              type="tel"
+              placeholder="+5511999999999"
+              value={formData.whatsapp}
+              onChange={(e) =>
+                setFormData({ ...formData, whatsapp: e.target.value })
+              }
+            />
+            <p className="text-xs text-muted-foreground">{t('profile.whatsapp_hint')}</p>
           </div>
           {availableRoles.length > 0 && (
             <div className="space-y-2">

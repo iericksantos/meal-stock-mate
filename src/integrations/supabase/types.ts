@@ -243,12 +243,14 @@ export type Database = {
           created_at: string | null
           created_by: string
           current_stock: number | null
+          direct_sale: boolean | null
           expiry_date: string | null
           id: string
           last_count_date: string | null
           last_counted_by: string | null
           min_stock: number | null
           name: string
+          price: number | null
           restaurant_id: string | null
           supplier_id: string | null
           unit: string
@@ -260,12 +262,14 @@ export type Database = {
           created_at?: string | null
           created_by: string
           current_stock?: number | null
+          direct_sale?: boolean | null
           expiry_date?: string | null
           id?: string
           last_count_date?: string | null
           last_counted_by?: string | null
           min_stock?: number | null
           name: string
+          price?: number | null
           restaurant_id?: string | null
           supplier_id?: string | null
           unit?: string
@@ -277,12 +281,14 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           current_stock?: number | null
+          direct_sale?: boolean | null
           expiry_date?: string | null
           id?: string
           last_count_date?: string | null
           last_counted_by?: string | null
           min_stock?: number | null
           name?: string
+          price?: number | null
           restaurant_id?: string | null
           supplier_id?: string | null
           unit?: string
@@ -436,6 +442,7 @@ export type Database = {
           restaurant_id: string | null
           updated_at: string | null
           user_id: string
+          whatsapp: string | null
         }
         Insert: {
           created_at?: string | null
@@ -445,6 +452,7 @@ export type Database = {
           restaurant_id?: string | null
           updated_at?: string | null
           user_id: string
+          whatsapp?: string | null
         }
         Update: {
           created_at?: string | null
@@ -454,6 +462,7 @@ export type Database = {
           restaurant_id?: string | null
           updated_at?: string | null
           user_id?: string
+          whatsapp?: string | null
         }
         Relationships: [
           {
