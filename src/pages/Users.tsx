@@ -44,6 +44,7 @@ interface UserWithRole {
   created_at: string;
   role: AppRole;
   full_name: string;
+  whatsapp?: string;
 }
 
 export default function Users() {
@@ -98,6 +99,7 @@ export default function Users() {
           created_at: profile?.created_at || new Date().toISOString(),
           role: role.role as AppRole,
           full_name: profile?.full_name || 'Sem nome',
+          whatsapp: profile?.whatsapp || undefined,
         };
       });
 

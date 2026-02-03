@@ -10,6 +10,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   full_name: string;
+  whatsapp?: string;
   role: "super_admin" | "host" | "admin" | "staff";
 }
 
@@ -73,7 +74,7 @@ serve(async (req) => {
 
     // Parse request body
     const body: CreateUserRequest = await req.json();
-    const { email, password, full_name, role } = body;
+    const { email, password, full_name, whatsapp, role } = body;
 
     // Validate input
     if (!email || !password || !full_name || !role) {
@@ -171,11 +172,12 @@ serve(async (req) => {
       );
     }
 
-    // Create profile with email and restaurant_id (inherit from requester for non-super_admin)
+    // Create profile with email, restaurant_id and whatsapp
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       user_id: authData.user.id,
       full_name,
       email,
+      whatsapp: whatsapp || null,
       restaurant_id: requesterRestaurantId,
     });
 

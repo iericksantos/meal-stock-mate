@@ -66,7 +66,7 @@ serve(async (req) => {
     const requesterRole = requestingUserRole.role;
 
     // Parse request body
-    const { user_id, full_name, email, password, role } = await req.json();
+    const { user_id, full_name, email, password, whatsapp, role } = await req.json();
 
     if (!user_id) {
       return new Response(
@@ -123,11 +123,15 @@ serve(async (req) => {
       );
     }
 
-    // Update profile if full_name provided
-    if (full_name) {
+    // Update profile if full_name or whatsapp provided
+    if (full_name || whatsapp !== undefined) {
+      const updateData: Record<string, string> = {};
+      if (full_name) updateData.full_name = full_name;
+      if (whatsapp !== undefined) updateData.whatsapp = whatsapp;
+
       const { error: profileError } = await supabaseAdmin
         .from("profiles")
-        .update({ full_name })
+        .update(updateData)
         .eq("user_id", user_id);
 
       if (profileError) {

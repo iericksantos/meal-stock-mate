@@ -22,7 +22,20 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.error': 'Erro ao fazer login. Tente novamente.',
     'auth.success': 'Login realizado com sucesso!',
     'auth.welcome': 'Bem-vindo ao sistema de estoque.',
-    'auth.test_users': 'Usuários de teste:',
+    'auth.forgot_password': 'Esqueceu sua senha?',
+    'auth.forgot_password_title': 'Recuperar Senha',
+    'auth.forgot_password_desc': 'Digite seu email para receber um link de recuperação.',
+    'auth.send_reset_link': 'Enviar Link de Recuperação',
+    'auth.reset_sent': 'Email enviado!',
+    'auth.reset_sent_desc': 'Verifique sua caixa de entrada para redefinir sua senha.',
+    'auth.reset_error': 'Erro ao enviar email de recuperação',
+
+    // Profile / WhatsApp
+    'profile.whatsapp': 'WhatsApp',
+    'profile.whatsapp_hint': 'Inclua o código do país e DDD (ex: +5511999999999)',
+
+    // Common extras
+    'common.close': 'Fechar',
 
     // Sidebar
     'nav.dashboard': 'Dashboard',
@@ -526,7 +539,20 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.error': 'Error al iniciar sesión. Inténtelo de nuevo.',
     'auth.success': '¡Inicio de sesión exitoso!',
     'auth.welcome': 'Bienvenido al sistema de inventario.',
-    'auth.test_users': 'Usuarios de prueba:',
+    'auth.forgot_password': '¿Olvidaste tu contraseña?',
+    'auth.forgot_password_title': 'Recuperar Contraseña',
+    'auth.forgot_password_desc': 'Ingresa tu correo electrónico para recibir un enlace de recuperación.',
+    'auth.send_reset_link': 'Enviar Enlace de Recuperación',
+    'auth.reset_sent': '¡Correo enviado!',
+    'auth.reset_sent_desc': 'Revisa tu bandeja de entrada para restablecer tu contraseña.',
+    'auth.reset_error': 'Error al enviar correo de recuperación',
+
+    // Profile / WhatsApp
+    'profile.whatsapp': 'WhatsApp',
+    'profile.whatsapp_hint': 'Incluya el código del país y el área (ej: +5511999999999)',
+
+    // Common extras
+    'common.close': 'Cerrar',
 
     // Sidebar
     'nav.dashboard': 'Panel',
@@ -1030,6 +1056,20 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.error': 'Login failed. Please try again.',
     'auth.success': 'Login successful!',
     'auth.welcome': 'Welcome to the inventory system.',
+    'auth.forgot_password': 'Forgot your password?',
+    'auth.forgot_password_title': 'Reset Password',
+    'auth.forgot_password_desc': 'Enter your email to receive a recovery link.',
+    'auth.send_reset_link': 'Send Recovery Link',
+    'auth.reset_sent': 'Email sent!',
+    'auth.reset_sent_desc': 'Check your inbox to reset your password.',
+    'auth.reset_error': 'Error sending recovery email',
+
+    // Profile / WhatsApp
+    'profile.whatsapp': 'WhatsApp',
+    'profile.whatsapp_hint': 'Include country and area code (e.g., +5511999999999)',
+
+    // Common extras
+    'common.close': 'Close',
     'auth.test_users': 'Test users:',
 
     // Sidebar
