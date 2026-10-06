@@ -174,7 +174,7 @@ export default function Sidebar() {
           <Button
             variant="ghost"
             size="icon"
-            className="hidden h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent md:flex"
+            className="hidden h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:flex"
             onClick={() => setCollapsed(!collapsed)}
           >
             <ChevronLeft
@@ -216,7 +216,7 @@ export default function Sidebar() {
           <div className="flex items-center justify-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2 text-sidebar-foreground hover:bg-sidebar-accent">
+                <Button variant="ghost" size="sm" className="gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                   <Globe className="h-4 w-4" />
                   <span>{currentLang?.flag}</span>
                 </Button>
@@ -242,7 +242,7 @@ export default function Sidebar() {
       {/* User info - always at bottom */}
       <div className="border-t border-sidebar-border p-4">
         <div className={cn('flex items-center gap-3', !inSheet && collapsed && 'justify-center')}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sm font-medium uppercase shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground text-sm font-medium uppercase shrink-0">
             {user?.email?.charAt(0) || 'U'}
           </div>
           {(inSheet || !collapsed) && (
