@@ -73,14 +73,14 @@
 
     --radius: 1rem;
 
-    /* Sidebar */
+    /* Sidebar - fundo escuro em ambos os temas, texto claro garantindo contraste */
     --sidebar-background: 220 20% 15%;
-    --sidebar-foreground: 24 9% 10%;
+    --sidebar-foreground: 210 25% 96%;
     --sidebar-primary: 37 92% 50%;
-    --sidebar-primary-foreground: 47 100% 96%;
-    --sidebar-accent: 24 5% 44%;
-    --sidebar-accent-foreground: 60 9% 97%;
-    --sidebar-border: 23 5% 82%;
+    --sidebar-primary-foreground: 20 91% 14%;
+    --sidebar-accent: 47 95% 55%;
+    --sidebar-accent-foreground: 20 91% 14%;
+    --sidebar-border: 220 15% 26%;
     --sidebar-ring: 37 92% 50%;
 
     /* Tabelas */
